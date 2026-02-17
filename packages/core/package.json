@@ -32,13 +32,18 @@
     "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
     "format": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "prepare": "effect-language-service patch"
   },
   "dependencies": {
     "@mnestia/schema": "workspace:*",
+    "@effect/platform": "^0.94.5",
+    "@effect/platform-bun": "^0.87.1",
+    "effect": "^3.19.18",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@effect/language-service": "^0.74.0",
     "@types/bun": "latest",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0"

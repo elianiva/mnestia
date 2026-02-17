@@ -38,10 +38,14 @@
       "name": "@mnestia/core",
       "version": "0.0.1",
       "dependencies": {
+        "@effect/platform": "^0.94.5",
+        "@effect/platform-bun": "^0.87.1",
         "@mnestia/schema": "workspace:*",
+        "effect": "^3.19.18",
         "zustand": "^5.0.0",
       },
       "devDependencies": {
+        "@effect/language-service": "^0.74.0",
         "@types/bun": "latest",
         "@types/react": "^19.2.0",
         "@types/react-dom": "^19.2.0",
