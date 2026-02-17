@@ -1,9 +1,30 @@
-export { createDeckStore, createInitialState } from "./store/deck-store";
-export type { DeckState, DeckStore } from "./store/deck-store";
+export { DeckService } from "./services/deck-service.js";
+export { ThemeService } from "./services/theme-service.js";
+export { NavigationService } from "./services/navigation-service.js";
 
-export { useKeyboardNavigation } from "./hooks/use-keyboard-navigation";
-export type { UseKeyboardNavigationOptions } from "./hooks/use-keyboard-navigation";
+export { createDeckAtom } from "./atoms/deck-atom.js";
+export { createClicksAtom, clicksAtomFamily } from "./atoms/clicks-atom.js";
+export {
+	themeCacheAtom,
+	setCachedTheme,
+	getCachedTheme,
+	clearThemeCache,
+} from "./atoms/theme-atom.js";
+export { slidesAtom } from "./atoms/slides-atom.js";
 
-export { defineDeck } from "./define-deck";
+export { defineDeck } from "./utils/define-deck.js";
+export { defineTheme } from "./utils/define-theme.js";
+export { slide } from "./utils/slide.js";
 
-export { resolveTheme, clearThemeCache } from "./resolve-theme";
+export { useDeck } from "./hooks/use-deck.js";
+export { useClicks } from "./hooks/use-clicks.js";
+export { useNavigation } from "./hooks/use-navigation.js";
+
+export {
+	SlideNotFoundError,
+	SlideLoadError,
+	InvalidSlideIndexError,
+	ThemeLoadError,
+	ThemeNotFoundError,
+	ExportError,
+} from "./errors/index.js";

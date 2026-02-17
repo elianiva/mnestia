@@ -9,20 +9,44 @@
       "import": "./src/index.ts"
     },
     "./define-deck": {
-      "types": "./src/define-deck.ts",
-      "import": "./src/define-deck.ts"
+      "types": "./src/utils/define-deck.ts",
+      "import": "./src/utils/define-deck.ts"
     },
-    "./hooks/use-keyboard-navigation": {
-      "types": "./src/hooks/use-keyboard-navigation.ts",
-      "import": "./src/hooks/use-keyboard-navigation.ts"
+    "./slide": {
+      "types": "./src/utils/slide.ts",
+      "import": "./src/utils/slide.ts"
     },
-    "./store/deck-store": {
-      "types": "./src/store/deck-store.ts",
-      "import": "./src/store/deck-store.ts"
+    "./services/deck": {
+      "types": "./src/services/deck-service.ts",
+      "import": "./src/services/deck-service.ts"
     },
-    "./resolve-theme": {
-      "types": "./src/resolve-theme.ts",
-      "import": "./src/resolve-theme.ts"
+    "./services/theme": {
+      "types": "./src/services/theme-service.ts",
+      "import": "./src/services/theme-service.ts"
+    },
+    "./atoms/deck": {
+      "types": "./src/atoms/deck-atom.ts",
+      "import": "./src/atoms/deck-atom.ts"
+    },
+    "./atoms/clicks": {
+      "types": "./src/atoms/clicks-atom.ts",
+      "import": "./src/atoms/clicks-atom.ts"
+    },
+    "./hooks/use-deck": {
+      "types": "./src/hooks/use-deck.ts",
+      "import": "./src/hooks/use-deck.ts"
+    },
+    "./hooks/use-clicks": {
+      "types": "./src/hooks/use-clicks.ts",
+      "import": "./src/hooks/use-clicks.ts"
+    },
+    "./hooks/use-navigation": {
+      "types": "./src/hooks/use-navigation.ts",
+      "import": "./src/hooks/use-navigation.ts"
+    },
+    "./errors": {
+      "types": "./src/errors/index.ts",
+      "import": "./src/errors/index.ts"
     },
     "./package.json": "./package.json"
   },
@@ -36,11 +60,11 @@
     "prepare": "effect-language-service patch"
   },
   "dependencies": {
-    "@mnestia/schema": "workspace:*",
+    "@effect-atom/atom-react": "^0.5.0",
     "@effect/platform": "^0.94.5",
     "@effect/platform-bun": "^0.87.1",
-    "effect": "^3.19.18",
-    "zustand": "^5.0.0"
+    "@mnestia/schema": "workspace:*",
+    "effect": "^3.19.18"
   },
   "devDependencies": {
     "@effect/language-service": "^0.74.0",
