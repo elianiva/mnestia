@@ -1,0 +1,47 @@
+platform: 'bun'
+
+dependsOn:
+  - id: 'core'
+    scope: 'build'
+
+tasks:
+  build:
+    command: 'bun run build'
+    deps:
+      - 'core:build'
+    inputs:
+      - 'src/**/*'
+    outputs:
+      - 'dist'
+  dev:
+    command: 'bun run dev'
+    deps:
+      - 'core:build'
+    inputs:
+      - 'src/**/*'
+    local: true
+  start:
+    command: 'bun run start'
+    deps:
+      - 'build'
+    inputs:
+      - 'dist/**/*'
+    local: true
+  lint:
+    command: 'bun run lint'
+    inputs:
+      - 'src/**/*.{ts,tsx}'
+  format:
+    command: 'bun run format'
+    inputs:
+      - 'src/**/*.{ts,tsx}'
+  typecheck:
+    command: 'bun run typecheck'
+    inputs:
+      - 'src/**/*.{ts,tsx}'
+      - 'tsconfig.json'
+  test:
+    command: 'bun run test'
+    inputs:
+      - 'src/**/*'
+      - '**/*.test.{ts,tsx}'
