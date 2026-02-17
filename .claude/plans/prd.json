@@ -153,7 +153,7 @@
       "Create src/index.ts entry"
     ],
     "dependencies": ["S1-C4: Schema Package Build"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -167,7 +167,7 @@
       "Create light and dark mode variants using data attributes"
     ],
     "dependencies": ["S3-C1: Theme Base Package Setup"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -181,7 +181,7 @@
       "Export from layouts/index.ts"
     ],
     "dependencies": ["S3-C2: Theme CSS Variables"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -195,7 +195,7 @@
       "Add background support via CSS"
     ],
     "dependencies": ["S3-C3: Default Layout"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -209,7 +209,7 @@
       "Export from layouts/index.ts"
     ],
     "dependencies": ["S3-C4: Cover Layout"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -223,7 +223,7 @@
       "Responsive stacking on smaller viewports"
     ],
     "dependencies": ["S3-C5: Center Layout"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -237,7 +237,7 @@
       "Export from layouts/index.ts"
     ],
     "dependencies": ["S3-C6: Split Layout"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -251,7 +251,7 @@
       "Export from components/index.ts"
     ],
     "dependencies": ["S3-C2: Theme CSS Variables"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -265,7 +265,7 @@
       "Handle loading state"
     ],
     "dependencies": ["S3-C8: CodeBlock Component"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -279,7 +279,7 @@
       "Export from components/index.ts"
     ],
     "dependencies": ["S3-C9: Image Component"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -293,7 +293,7 @@
       "Support responsive overflow"
     ],
     "dependencies": ["S3-C10: Quote Component"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",
@@ -307,7 +307,7 @@
       "Add build configuration for theme package"
     ],
     "dependencies": ["S3-C7: Grid Layout", "S3-C11: Table Component"],
-    "passes": false
+    "passes": true
   },
   {
     "category": "commit",

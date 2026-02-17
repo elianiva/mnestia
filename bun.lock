@@ -55,6 +55,25 @@
         "typescript": "^5.7.3",
       },
     },
+    "packages/theme-base": {
+      "name": "@mnestia/theme-base",
+      "version": "0.0.1",
+      "dependencies": {
+        "@mnestia/schema": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "@types/react": "^19.2.0",
+        "@types/react-dom": "^19.2.0",
+        "oxlint": "^0.15.12",
+        "typescript": "^5.7.3",
+      },
+      "peerDependencies": {
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
+        "typescript": "^5.7.3",
+      },
+    },
     "packages/web": {
       "name": "@mnestia/web",
       "version": "0.0.1",
@@ -225,6 +244,8 @@
     "@mnestia/schema": ["@mnestia/schema@workspace:packages/schema"],
 
     "@mnestia/server": ["@mnestia/server@workspace:packages/server"],
+
+    "@mnestia/theme-base": ["@mnestia/theme-base@workspace:packages/theme-base"],
 
     "@mnestia/web": ["@mnestia/web@workspace:packages/web"],
 

@@ -1,0 +1,41 @@
+{
+  "name": "@mnestia/theme-base",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build ./index.ts --outdir ./dist --target bun && cp ./src/styles/*.css ./dist/",
+    "dev": "bun build ./index.ts --outdir ./dist --target bun --watch",
+    "lint": "oxlint --config ../../oxlint.json .",
+    "format": "oxlint --format .",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@mnestia/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "oxlint": "^0.15.12",
+    "typescript": "^5.7.3"
+  }
+}

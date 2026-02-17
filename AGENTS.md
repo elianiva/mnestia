@@ -50,19 +50,38 @@ Dependencies:
 
 ## Code Style
 
+### File Naming (Kebab-Case)
+
+All files use kebab-case:
+
+- `my-component.tsx` - React components
+- `use-hook-name.ts` - Hooks
+- `util-helpers.ts` - Utilities
+- `types.ts` - Type definitions
+- `deck-store.ts` - Store files
+
 ### Imports
-- Use `.js` extensions: `import { x } from "./file.js"`
-- Type imports: `import type { X } from "./types.js"`
-- Use `type` keyword for type-only imports
+
+Import without extensions (TypeScript resolves them automatically):
+
+```typescript
+// ✅ Correct
+import { myFunction } from "./my-file";
+import { MyComponent } from "./my-component";
+import type { MyType } from "./types";
+```
 
 ### Naming
-- Functions: camelCase (`defineDeck`)
-- Types/Interfaces: PascalCase (`DeckConfig`)
-- Constants: UPPER_SNAKE_CASE for true constants
-- React hooks: `useXxx` prefix
-- Factory functions: `createXxx` prefix
+
+- **Files**: kebab-case (`use-deck-store.ts`, `slide-viewer.tsx`)
+- **Functions**: camelCase (`defineDeck`)
+- **Types/Interfaces**: PascalCase (`DeckConfig`)
+- **Constants**: UPPER_SNAKE_CASE for true constants
+- **React hooks**: `useXxx` prefix with kebab-case files (`use-deck.ts`)
+- **Factory functions**: `createXxx` prefix (`create-deck-store.ts`)
 
 ### Error Handling
+
 - Use descriptive error messages
 - Throw errors for invalid inputs
 - Return early for guard clauses

@@ -27,18 +27,35 @@ export const DeckConfigSchema = v.object({
 export type DeckConfig = v.InferOutput<typeof DeckConfigSchema>;
 ```
 
-## File Organization
+## File Naming
 
-- `deck.ts` - Deck configuration schemas
-- `slide.ts` - Slide schemas  
-- `navigation.ts` - Navigation config schemas
-- `theme.ts` - Theme module schemas
-- `export.ts` - Export configuration schemas
+Use kebab-case for all files:
+
+```
+src/
+  deck.ts          # Deck configuration schemas
+  slide.ts         # Slide schemas
+  navigation.ts    # Navigation config schemas
+  theme.ts         # Theme module schemas
+  export.ts        # Export configuration schemas
+  index.ts         # Barrel exports
+```
+
+### Imports
+
+Import without extensions:
+
+```typescript
+// ✅ Correct
+import { SlideSchema } from "./slide";
+import type { Slide } from "./slide";
+```
 
 ## Naming
 
-- Schema variables: `XxxSchema` suffix
-- Types: `Xxx` (without Schema suffix)
+- **Files**: kebab-case (`deck-config.ts`, `slide-schema.ts`)
+- **Schema variables**: `XxxSchema` suffix
+- **Types**: `Xxx` (without Schema suffix)
 - Use `v.optional()` for optional fields, not `v.nullable()`
 
 ## Dependencies

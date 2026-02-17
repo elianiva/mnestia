@@ -24,11 +24,28 @@ bun run lint
 
 ## Patterns
 
+### File Naming
+
+Use kebab-case for all files:
+
+```
+src/
+  store/
+    deck-store.ts
+    deck-store.test.ts
+  hooks/
+    use-keyboard-navigation.ts
+    use-keyboard-navigation.test.ts
+  define-deck.ts
+  define-deck.test.ts
+```
+
 ### State Store
 
 Use Zustand with factory pattern:
 
 ```typescript
+// deck-store.ts
 export function createDeckStore(config: DeckConfig) {
   return create<DeckState>((set, get) => ({
     // state
@@ -55,6 +72,16 @@ export function useKeyboardNavigation(store: DeckStore) {
 
 // use-keyboard-navigation.test.ts
 import { test, expect } from "bun:test";
+```
+
+### Imports
+
+Import without extensions:
+
+```typescript
+// ✅ Correct
+import { createDeckStore } from "./store/deck-store";
+import type { DeckConfig } from "../types";
 ```
 
 ### Testing
@@ -86,9 +113,10 @@ index.ts                    # Re-exports all public APIs
 
 ## Naming Conventions
 
-- Hooks: `useXxx` (e.g., `useKeyboardNavigation`)
-- Factory functions: `createXxx` (e.g., `createDeckStore`)
-- Types: PascalCase with descriptive names
+- **Files**: kebab-case (`use-keyboard-navigation.ts`)
+- **Hooks**: `useXxx` (e.g., `useKeyboardNavigation`)
+- **Factory functions**: `createXxx` (e.g., `createDeckStore`)
+- **Types**: PascalCase with descriptive names
 
 ## Dependencies
 
