@@ -1,5 +1,3 @@
-platform: "bun"
-
 dependsOn:
   - id: "core"
     scope: "build"
@@ -23,14 +21,12 @@ tasks:
     inputs:
       - "src/**/*"
       - "vite.config.ts"
-    local: true
   preview:
     command: "bun run preview"
     deps:
       - "build"
     inputs:
       - "dist/**/*"
-    local: true
   lint:
     command: "bun run lint"
     inputs:

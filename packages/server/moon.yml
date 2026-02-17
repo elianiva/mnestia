@@ -1,5 +1,3 @@
-platform: "bun"
-
 dependsOn:
   - id: "core"
     scope: "build"
@@ -21,14 +19,12 @@ tasks:
       - "core:build"
     inputs:
       - "src/**/*"
-    local: true
   start:
     command: "bun run start"
     deps:
       - "build"
     inputs:
       - "dist/**/*"
-    local: true
   lint:
     command: "bun run lint"
     inputs:

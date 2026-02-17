@@ -1,5 +1,3 @@
-platform: "bun"
-
 dependsOn:
   - id: "theme-base"
     scope: "build"
@@ -15,7 +13,6 @@ tasks:
     command: "bun run dev"
     inputs:
       - "src/**/*"
-    local: true
   lint:
     command: "bun run lint"
     inputs:
