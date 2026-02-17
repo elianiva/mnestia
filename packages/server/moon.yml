@@ -1,49 +1,55 @@
-platform: 'bun'
+platform: "bun"
 
 dependsOn:
-  - id: 'core'
-    scope: 'build'
-  - id: 'schema'
-    scope: 'build'
+  - id: "core"
+    scope: "build"
+  - id: "schema"
+    scope: "build"
 
 tasks:
   build:
-    command: 'bun run build'
+    command: "bun run build"
     deps:
-      - 'core:build'
+      - "core:build"
     inputs:
-      - 'src/**/*'
+      - "src/**/*"
     outputs:
-      - 'dist'
+      - "dist"
   dev:
-    command: 'bun run dev'
+    command: "bun run dev"
     deps:
-      - 'core:build'
+      - "core:build"
     inputs:
-      - 'src/**/*'
+      - "src/**/*"
     local: true
   start:
-    command: 'bun run start'
+    command: "bun run start"
     deps:
-      - 'build'
+      - "build"
     inputs:
-      - 'dist/**/*'
+      - "dist/**/*"
     local: true
   lint:
-    command: 'bun run lint'
+    command: "bun run lint"
     inputs:
-      - 'src/**/*.{ts,tsx}'
+      - "src/**/*.{ts,tsx}"
   format:
-    command: 'bun run format'
+    command: "bun run format"
     inputs:
-      - 'src/**/*.{ts,tsx}'
+      - "src/**/*.{ts,tsx}"
   typecheck:
-    command: 'bun run typecheck'
+    command: "bun run typecheck"
     inputs:
-      - 'src/**/*.{ts,tsx}'
-      - 'tsconfig.json'
+      - "src/**/*.{ts,tsx}"
+      - "tsconfig.json"
   test:
-    command: 'bun run test'
+    command: "bun run test"
     inputs:
-      - 'src/**/*'
-      - '**/*.test.{ts,tsx}'
+      - "src/**/*"
+      - "**/*.test.{ts,tsx}"
+  install:
+    command: "bun install"
+    inputs:
+      - "package.json"
+    outputs:
+      - "node_modules"

@@ -47,7 +47,9 @@ export function Table({ headers, rows, striped = false, className, style }: Tabl
         <thead>
           <tr>
             {headers.map((header, i) => (
-              <th key={i} style={thStyle}>{header}</th>
+              <th key={i} style={thStyle}>
+                {header}
+              </th>
             ))}
           </tr>
         </thead>
@@ -62,7 +64,9 @@ export function Table({ headers, rows, striped = false, className, style }: Tabl
               }
             >
               {row.map((cell, cellIndex) => (
-                <td key={cellIndex} style={tdStyle}>{cell}</td>
+                <td key={cellIndex} style={tdStyle}>
+                  {cell}
+                </td>
               ))}
             </tr>
           ))}

@@ -51,11 +51,11 @@ export const ConfigSchema = v.object({
 
 ## Naming
 
-| Category | Convention | Example |
-|----------|-----------|---------|
-| Files | kebab-case | `deck.ts` |
-| Schema variables | XxxSchema | `DeckConfigSchema` |
-| Types | PascalCase | `DeckConfig` |
+| Category         | Convention | Example            |
+| ---------------- | ---------- | ------------------ |
+| Files            | kebab-case | `deck.ts`          |
+| Schema variables | XxxSchema  | `DeckConfigSchema` |
+| Types            | PascalCase | `DeckConfig`       |
 
 ## Dependencies
 

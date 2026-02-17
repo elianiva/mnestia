@@ -1,8 +1,8 @@
 {
   "name": "@mnestia/server",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
+  "type": "module",
   "main": "./dist/index.js",
   "scripts": {
     "dev": "bun run --watch ./src/index.ts",
@@ -10,7 +10,7 @@
     "start": "bun run ./dist/index.js",
     "test": "bun test",
     "lint": "oxlint --config ../../oxlint.json .",
-    "format": "oxlint --format --ignore-pattern 'dist/**' .",
+    "format": "oxfmt --write .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -19,8 +19,6 @@
     "elysia": "latest"
   },
   "devDependencies": {
-    "bun-types": "latest",
-    "oxlint": "^0.15.12",
-    "typescript": "^5.7.3"
+    "bun-types": "latest"
   }
 }

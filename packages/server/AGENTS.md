@@ -47,9 +47,7 @@ export const deckRoutes = new Elysia()
 ```typescript
 import { Elysia } from "elysia";
 
-const app = new Elysia()
-  .get("/", () => "Hello Elysia")
-  .listen(3000);
+const app = new Elysia().get("/", () => "Hello Elysia").listen(3000);
 ```
 
 ### Testing
@@ -66,12 +64,12 @@ describe("feature", () => {
 
 ## Naming
 
-| Category | Convention | Example |
-|----------|-----------|---------|
-| Files | kebab-case | `deck-routes.ts` |
-| Route handlers | camelCase | `deckRoutes` |
-| Middleware | camelCase | `authMiddleware` |
-| Types | PascalCase | `DeckResponse` |
+| Category       | Convention | Example          |
+| -------------- | ---------- | ---------------- |
+| Files          | kebab-case | `deck-routes.ts` |
+| Route handlers | camelCase  | `deckRoutes`     |
+| Middleware     | camelCase  | `authMiddleware` |
+| Types          | PascalCase | `DeckResponse`   |
 
 ## Development Server
 

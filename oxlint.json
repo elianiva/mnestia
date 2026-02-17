@@ -1,5 +1,5 @@
 {
-  "plugins": ["import", "react", "react-hooks", "react-perf", "jsx-a11y", "tree-shaking", "promise", "oxc"],
+  "plugins": ["import", "react", "react-hooks", "react-perf", "jsx-a11y", "promise", "oxc"],
   "env": {
     "browser": true,
     "es2022": true,

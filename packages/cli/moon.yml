@@ -1,32 +1,38 @@
-platform: 'bun'
+platform: "bun"
 
 tasks:
   build:
-    command: 'bun run build'
+    command: "bun run build"
     inputs:
-      - 'src/**/*'
+      - "src/**/*"
     outputs:
-      - 'dist'
+      - "dist"
   dev:
-    command: 'bun run dev'
+    command: "bun run dev"
     inputs:
-      - 'src/**/*'
+      - "src/**/*"
     local: true
   lint:
-    command: 'oxlint --config ../../oxlint.json --ignore-pattern "dist/**" .'
+    command: "bun run lint"
     inputs:
-      - 'src/**/*.{ts,tsx}'
+      - "src/**/*.{ts,tsx}"
   format:
-    command: 'oxlint --format --ignore-pattern "dist/**" .'
+    command: "bun run format"
     inputs:
-      - 'src/**/*.{ts,tsx}'
+      - "src/**/*.{ts,tsx}"
   typecheck:
-    command: 'bun run typecheck'
+    command: "bun run typecheck"
     inputs:
-      - 'src/**/*.{ts,tsx}'
-      - 'tsconfig.json'
+      - "src/**/*.{ts,tsx}"
+      - "tsconfig.json"
   test:
-    command: 'bun run test'
+    command: "bun run test"
     inputs:
-      - 'src/**/*'
-      - '**/*.test.{ts,tsx}'
+      - "src/**/*"
+      - "**/*.test.{ts,tsx}"
+  install:
+    command: "bun install"
+    inputs:
+      - "package.json"
+    outputs:
+      - "node_modules"

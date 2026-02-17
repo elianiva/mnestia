@@ -49,7 +49,9 @@ export function Quote({ quote, author, source }: QuoteProps) {
 
   return (
     <blockquote style={containerStyle}>
-      <span style={quoteMarkStyle} aria-hidden="true">"""</span>
+      <span style={quoteMarkStyle} aria-hidden="true">
+        """
+      </span>
       <p style={quoteStyle}>{quote}</p>
       {(author || source) && (
         <cite style={attributionStyle}>

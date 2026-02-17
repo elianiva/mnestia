@@ -58,11 +58,14 @@ export function CodeBlock({ code, language, filename, showLineNumbers = false }:
     <div style={containerStyle}>
       {(filename || language) && (
         <div style={headerStyle}>
-          {filename && (
-            <span style={{ color: "var(--mnestia-text-secondary)" }}>{filename}</span>
-          )}
+          {filename && <span style={{ color: "var(--mnestia-text-secondary)" }}>{filename}</span>}
           {language && (
-            <span style={{ color: "var(--mnestia-text-muted)", fontSize: "var(--mnestia-font-size-xs)" }}>
+            <span
+              style={{
+                color: "var(--mnestia-text-muted)",
+                fontSize: "var(--mnestia-font-size-xs)",
+              }}
+            >
               {language}
             </span>
           )}
@@ -72,9 +75,7 @@ export function CodeBlock({ code, language, filename, showLineNumbers = false }:
         <code>
           {lines.map((line, i) => (
             <div key={i} style={lineStyle}>
-              {showLineNumbers && (
-                <span style={lineNumberStyle}>{i + 1}</span>
-              )}
+              {showLineNumbers && <span style={lineNumberStyle}>{i + 1}</span>}
               <span style={codeStyle}>{line || "\u00a0"}</span>
             </div>
           ))}

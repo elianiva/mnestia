@@ -85,12 +85,12 @@ describe("feature", () => {
 
 ## Naming
 
-| Category | Convention | Example |
-|----------|-----------|---------|
-| Files | kebab-case | `code-block.tsx` |
-| Layouts | PascalCase + Layout suffix | `DefaultLayout` |
-| Components | PascalCase | `CodeBlock` |
-| Types | PascalCase | `LayoutProps` |
+| Category   | Convention                 | Example          |
+| ---------- | -------------------------- | ---------------- |
+| Files      | kebab-case                 | `code-block.tsx` |
+| Layouts    | PascalCase + Layout suffix | `DefaultLayout`  |
+| Components | PascalCase                 | `CodeBlock`      |
+| Types      | PascalCase                 | `LayoutProps`    |
 
 ## Usage
 
@@ -114,6 +114,7 @@ import "@mnestia/theme-base/src/styles/global.css";
 ```
 
 ### Color Tokens
+
 - `--mnestia-bg` - Background color
 - `--mnestia-text` - Primary text color
 - `--mnestia-primary` - Primary accent color
@@ -124,7 +125,7 @@ import "@mnestia/theme-base/src/styles/global.css";
 Add `data-theme="dark"` attribute:
 
 ```html
-<html data-theme="dark">
+<html data-theme="dark"></html>
 ```
 
 ## Dependencies

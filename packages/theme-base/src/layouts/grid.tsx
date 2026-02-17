@@ -13,10 +13,15 @@ const gapMap = {
   lg: "var(--mnestia-space-8)",
 };
 
-export function GridLayout({ children, columns = 2, gap = "md", className, style }: GridLayoutProps) {
-  const gridTemplateColumns = typeof columns === "number"
-    ? `repeat(${columns}, 1fr)`
-    : columns.join(" ");
+export function GridLayout({
+  children,
+  columns = 2,
+  gap = "md",
+  className,
+  style,
+}: GridLayoutProps) {
+  const gridTemplateColumns =
+    typeof columns === "number" ? `repeat(${columns}, 1fr)` : columns.join(" ");
 
   return (
     <div

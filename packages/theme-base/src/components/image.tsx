@@ -43,16 +43,9 @@ export function Image({ src, alt, caption, objectFit = "contain", className, sty
   return (
     <figure style={containerStyle} className={className}>
       <div style={figureStyle}>
-        <img
-          src={src}
-          alt={alt}
-          style={imageStyle}
-          loading="lazy"
-        />
+        <img src={src} alt={alt} style={imageStyle} loading="lazy" />
       </div>
-      {caption && (
-        <figcaption style={captionStyle}>{caption}</figcaption>
-      )}
+      {caption && <figcaption style={captionStyle}>{caption}</figcaption>}
     </figure>
   );
 }

@@ -38,7 +38,7 @@ Use Zustand with factory pattern:
 export function createDeckStore(config: DeckConfig) {
   return create<DeckState>((set, get) => ({
     currentSlide: 0,
-    
+
     nextSlide: () => {
       const { currentSlide } = get();
       set({ currentSlide: currentSlide + 1 });
@@ -75,12 +75,12 @@ describe("feature", () => {
 
 ## Naming
 
-| Category | Convention | Example |
-|----------|-----------|---------|
-| Files | kebab-case | `deck-store.ts` |
-| Hooks | useXxx | `useKeyboardNavigation` |
-| Factory functions | createXxx | `createDeckStore` |
-| Types | PascalCase | `DeckConfig` |
+| Category          | Convention | Example                 |
+| ----------------- | ---------- | ----------------------- |
+| Files             | kebab-case | `deck-store.ts`         |
+| Hooks             | useXxx     | `useKeyboardNavigation` |
+| Factory functions | createXxx  | `createDeckStore`       |
+| Types             | PascalCase | `DeckConfig`            |
 
 ## Dependencies
 

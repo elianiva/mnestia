@@ -50,14 +50,9 @@
     "build": "echo 'No build needed'",
     "dev": "echo 'No dev needed'",
     "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
-    "format": "oxlint --format --ignore-pattern 'dist/**' .",
+    "format": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
-  },
-  "peerDependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "typescript": "^5.7.3"
   },
   "dependencies": {
     "@mnestia/schema": "workspace:*"
@@ -65,8 +60,11 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "oxlint": "^0.15.12",
+    "@types/react-dom": "^19.2.0"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "typescript": "^5.7.3"
   }
 }

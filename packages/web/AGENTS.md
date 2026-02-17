@@ -58,8 +58,8 @@ interface ButtonProps {
 
 export function Button({ children, onClick }: ButtonProps) {
   return (
-    <button 
-      className="bg-slate-900 text-white p-4" 
+    <button
+      className="bg-slate-900 text-white p-4"
       onClick={onClick}
     >
       {children}
@@ -92,12 +92,12 @@ describe("feature", () => {
 
 ## Naming
 
-| Category | Convention | Example |
-|----------|-----------|---------|
-| Files | kebab-case | `button.tsx` |
-| Components | PascalCase | `Button` |
-| Hooks | useXxx | `useDeck` |
-| Types | PascalCase | `PageProps` |
+| Category   | Convention | Example      |
+| ---------- | ---------- | ------------ |
+| Files      | kebab-case | `button.tsx` |
+| Components | PascalCase | `Button`     |
+| Hooks      | useXxx     | `useDeck`    |
+| Types      | PascalCase | `PageProps`  |
 
 ## Dependencies
 
@@ -125,6 +125,7 @@ bunx shadcn@canary add button -y --overwrite
 ```
 
 Components are installed to `src/components/ui/` and use:
+
 - `radix-ui` - Modern, accessible primitives (base-ui merged into radix)
 - `class-variance-authority` - Component variants
 - `tailwind-merge` + `clsx` - Class name utilities
@@ -135,6 +136,7 @@ Components are installed to `src/components/ui/` and use:
 See [shadcn/ui registry](https://ui.shadcn.com/docs/components) for full list.
 
 Common components:
+
 - `button` - Button with variants
 - `slider` - Range input
 - `card` - Card container

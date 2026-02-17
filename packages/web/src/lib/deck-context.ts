@@ -5,8 +5,8 @@ import type { ThemeModule } from "@mnestia/schema/theme";
 type DeckStore = ReturnType<typeof createDeckStore>;
 
 export interface DeckContextValue {
-	store: DeckStore;
-	theme: ThemeModule | null;
+  store: DeckStore;
+  theme: ThemeModule | null;
 }
 
 export const DeckContext = createContext<DeckContextValue | null>(null);
