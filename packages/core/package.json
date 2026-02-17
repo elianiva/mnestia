@@ -29,6 +29,10 @@
     "react-dom": "^19.2.0",
     "typescript": "^5.7.3"
   },
+  "dependencies": {
+    "@mnestia/schema": "workspace:*",
+    "zustand": "^5.0.0"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/react": "^19.2.0",

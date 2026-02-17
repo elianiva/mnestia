@@ -5,7 +5,8 @@
     "outDir": "./dist",
     "composite": true,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "lib": ["ESNext", "DOM"]
   },
   "include": ["index.ts", "src/**/*"],
   "exclude": ["node_modules", "dist"]
