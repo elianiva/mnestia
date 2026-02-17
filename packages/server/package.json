@@ -8,7 +8,7 @@
     "dev": "bun run --watch ./src/index.ts",
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "start": "bun run ./dist/index.js",
-    "test": "bun test",
+    "test": "bun test test/",
     "lint": "oxlint --config ../../oxlint.json .",
     "format": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
@@ -19,8 +19,12 @@
     "@effect/platform-bun": "^0.87.1",
     "@mnestia/core": "workspace:*",
     "@mnestia/schema": "workspace:*",
+    "@tanstack/ai": "^0.5.0",
+    "@tanstack/ai-openai": "^0.5.0",
+    "@valibot/to-json-schema": "^1.5.0",
     "effect": "^3.19.18",
-    "elysia": "latest"
+    "elysia": "latest",
+    "valibot": "^1.2.0"
   },
   "devDependencies": {
     "@effect/language-service": "^0.74.0",

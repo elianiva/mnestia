@@ -144,15 +144,21 @@ All state changes go through Slide Service (Effect-based).
 
 # 5. State Management (Elysia `.state()`)
 
-Use official extends-context pattern.
+Use `.decorate()` pattern (not `.state()`) — Elysia `.state()` does not propagate to WebSocket handlers.
 
-Access:
+Access (REST handlers):
 
 ```
-ctx.store.slideStore
+(ctx as unknown as { slideStore: Map<string, DeckStateInternal> }).slideStore
 ```
 
-State key:
+Access (WebSocket handlers):
+
+```
+(ws.data as unknown as { slideStore: Map<string, DeckStateInternal> }).slideStore
+```
+
+Decorator key:
 
 ```
 slideStore
@@ -161,14 +167,16 @@ slideStore
 Structure:
 
 ```
-Map<deckId, DeckState>
+Map<deckId, DeckStateInternal>
 ```
 
-DeckState:
+DeckStateInternal:
 
 - currentSlide: number
-- slides: Slide[]
-- clients: Set<WebSocket>
+- slides: ServerSlide[]
+- clients: Map<string, WebSocket> (keyed by ws.id for stable identity across Elysia WS handler callbacks)
+
+**Important:** Elysia creates different wrapper objects for the same WebSocket connection across `open`, `message`, and `close` handlers. Use `ws.id` (stable string) as the key for client tracking — never use object reference equality (`Set<WebSocket>`).
 
 Constraints:
 

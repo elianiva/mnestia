@@ -1,9 +1,6 @@
 {
   "name": "@mnestia/root",
   "version": "0.0.1",
-  "private": true,
-  "type": "module",
-  "packageManager": "bun@1.2.5",
   "devDependencies": {
     "@moonrepo/cli": "2.0.0-rc.4",
     "@types/prompts": "^2.4.9",
@@ -11,6 +8,9 @@
     "oxlint": "^1.48.0",
     "typescript": "^5.7.3"
   },
+  "packageManager": "bun@1.2.5",
+  "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ]
