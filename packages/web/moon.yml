@@ -1,53 +1,39 @@
+language: typescript
+stack: frontend
+layer: application
+toolchains:
+  default: 'bun'
+
 dependsOn:
-  - id: "core"
-    scope: "build"
-  - id: "schema"
-    scope: "build"
+  - id: 'core'
+    scope: 'build'
+  - id: 'schema'
+    scope: 'build'
 
 tasks:
   build:
-    command: "bun run build"
-    deps:
-      - "core:build"
+    command: 'bun run build'
     inputs:
-      - "src/**/*"
-      - "vite.config.ts"
+      - '@group(sources)'
+      - '@group(configs)'
+      - 'vite.config.ts'
     outputs:
-      - "dist"
-  dev:
-    command: "bun run dev"
-    deps:
-      - "core:build"
-    inputs:
-      - "src/**/*"
-      - "vite.config.ts"
+      - 'dist'
+
   preview:
-    command: "bun run preview"
+    description: 'Preview production build'
+    command: 'bun run preview'
     deps:
-      - "build"
+      - 'build'
     inputs:
-      - "dist/**/*"
-  lint:
-    command: "bun run lint"
-    inputs:
-      - "src/**/*.{ts,tsx}"
-  format:
-    command: "bun run format"
-    inputs:
-      - "src/**/*.{ts,tsx}"
-  typecheck:
-    command: "bun run typecheck"
-    inputs:
-      - "src/**/*.{ts,tsx}"
-      - "tsconfig.json"
-  test:
-    command: "bun run test"
-    inputs:
-      - "src/**/*"
-      - "**/*.test.{ts,tsx}"
+      - 'dist/**/*'
+    preset: 'server'
+
   install:
-    command: "bun install"
+    command: 'bun install'
     inputs:
-      - "package.json"
+      - 'package.json'
     outputs:
-      - "node_modules"
+      - 'node_modules'
+    options:
+      cache: false

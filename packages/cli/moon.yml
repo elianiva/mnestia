@@ -1,39 +1,21 @@
+language: typescript
+stack: infrastructure
+layer: tool
+toolchains:
+  default: 'bun'
+
 tasks:
-  build:
-    command: "bun run build"
-    inputs:
-      - "src/**/*"
-    outputs:
-      - "dist"
-  dev:
-    command: "bun run dev"
-    inputs:
-      - "src/**/*"
   run:
-    command: "bun run run"
+    description: 'Run CLI tool'
+    command: 'bun run run'
     inputs:
-      - "src/**/*"
-  lint:
-    command: "bun run lint"
-    inputs:
-      - "src/**/*.{ts,tsx}"
-  format:
-    command: "bun run format"
-    inputs:
-      - "src/**/*.{ts,tsx}"
-  typecheck:
-    command: "bun run typecheck"
-    inputs:
-      - "src/**/*.{ts,tsx}"
-      - "tsconfig.json"
-  test:
-    command: "bun run test"
-    inputs:
-      - "src/**/*"
-      - "**/*.test.{ts,tsx}"
+      - '@group(sources)'
+
   install:
-    command: "bun install"
+    command: 'bun install'
     inputs:
-      - "package.json"
+      - 'package.json'
     outputs:
-      - "node_modules"
+      - 'node_modules'
+    options:
+      cache: false

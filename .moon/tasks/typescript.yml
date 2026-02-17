@@ -1,0 +1,63 @@
+# https://moonrepo.dev/docs/config/tasks
+$schema: '../cache/schemas/tasks.json'
+
+# Inherited by all TypeScript/Bun projects
+inheritedBy:
+  language: 'typescript'
+  toolchains: ['bun']
+
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - 'index.ts'
+  tests:
+    - '**/*.test.{ts,tsx}'
+  configs:
+    - '*.config.{ts,js}'
+    - 'tsconfig.json'
+
+tasks:
+  build:
+    description: 'Build the project'
+    command: 'bun run build'
+    inputs:
+      - '@group(sources)'
+      - '@group(configs)'
+    outputs:
+      - 'dist'
+
+  dev:
+    description: 'Start development server with watch'
+    command: 'bun run dev'
+    preset: 'server'
+    inputs:
+      - '@group(sources)'
+      - '@group(configs)'
+
+  lint:
+    description: 'Run linter'
+    command: 'bun run lint'
+    inputs:
+      - '@group(sources)'
+      - '@group(tests)'
+
+  format:
+    description: 'Format code'
+    command: 'bun run format'
+    inputs:
+      - '@group(sources)'
+      - '@group(tests)'
+
+  typecheck:
+    description: 'Run TypeScript type checker'
+    command: 'bun run typecheck'
+    inputs:
+      - '@group(sources)'
+      - '@group(configs)'
+
+  test:
+    description: 'Run tests'
+    command: 'bun run test'
+    inputs:
+      - '@group(sources)'
+      - '@group(tests)'

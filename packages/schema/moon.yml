@@ -1,32 +1,14 @@
+language: typescript
+layer: library
+toolchains:
+  default: 'bun'
+
 tasks:
-  build:
-    command: "bun run build"
-    inputs:
-      - "src/**/*"
-    outputs:
-      - "dist"
-  dev:
-    command: "bun run dev"
-    inputs:
-      - "src/**/*"
-    outputs:
-      - "dist"
-  lint:
-    command: "bun run lint"
-    inputs:
-      - "src/**/*.{ts,tsx}"
-  format:
-    command: "bun run format"
-    inputs:
-      - "src/**/*.{ts,tsx}"
-  typecheck:
-    command: "bun run typecheck"
-    inputs:
-      - "src/**/*.{ts,tsx}"
-      - "tsconfig.json"
   install:
-    command: "bun install"
+    command: 'bun install'
     inputs:
-      - "package.json"
+      - 'package.json'
     outputs:
-      - "node_modules"
+      - 'node_modules'
+    options:
+      cache: false
