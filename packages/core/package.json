@@ -4,6 +4,10 @@
   "type": "module",
   "private": true,
   "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
     "./define-deck": {
       "types": "./src/define-deck.ts",
       "import": "./src/define-deck.ts"
@@ -15,6 +19,10 @@
     "./store/deck-store": {
       "types": "./src/store/deck-store.ts",
       "import": "./src/store/deck-store.ts"
+    },
+    "./resolve-theme": {
+      "types": "./src/resolve-theme.ts",
+      "import": "./src/resolve-theme.ts"
     },
     "./package.json": "./package.json"
   },

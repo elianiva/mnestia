@@ -482,13 +482,25 @@ my-presentation/
   - Preference saved to localStorage
 
 ### 14. URL Routing
-- **Decision**: `/slide/1` pattern
+- **Decision**: `/slide/:number` pattern
 - **Structure**:
   - `/slide/:number` - Specific slide
-  - `/slide/:number?click=:step` - With click step
-  - `/presenter` - Presenter mode
+  - `/slide/:number?click=:step` - With click step (future)
+  - `/presenter` - Presenter mode (future)
+- **Persistence**: Current slide stored in both URL and localStorage for refresh recovery
 
-### 15. Keyboard Shortcuts
+### 15. Theme Loading Strategy
+- **Decision**: Load theme once at app initialization
+- **Rationale**: Presentations typically use single theme throughout, eager loading reduces per-slide latency
+- **Implementation**: Dynamic import in DeckProvider, cached for duration of session
+
+### 16. State Persistence
+- **Decision**: Dual persistence - URL + localStorage
+- **URL**: `/slide/:number` for shareable links and browser history
+- **localStorage**: `mnestia:currentSlide` for refresh recovery and cross-session continuity
+- **Priority**: URL param takes precedence over localStorage on load
+
+### 17. Keyboard Shortcuts
 - **Decision**: Config file overrides
 - **Config**:
   ```ts
