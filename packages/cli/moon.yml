@@ -9,6 +9,10 @@ tasks:
     command: "bun run dev"
     inputs:
       - "src/**/*"
+  run:
+    command: "bun run run"
+    inputs:
+      - "src/**/*"
   lint:
     command: "bun run lint"
     inputs:

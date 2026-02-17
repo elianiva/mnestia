@@ -3,13 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "bin": {
-    "mnestia": "./src/index.ts",
-    "create-mnestia": "./src/index.ts"
+    "mnestia": "./dist/index.js",
+    "create-mnestia": "./dist/index.js"
   },
   "type": "module",
   "scripts": {
-    "build": "echo 'No build needed'",
-    "dev": "echo 'No dev needed'",
+    "dev": "bun --watch ./src/index.ts",
+    "run": "bun ./src/index.ts",
+    "build": "bun build ./src/index.ts --outdir=./dist --target=bun --minify",
     "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
     "format": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
@@ -25,7 +26,9 @@
     "@effect/cli": "^0.73.2",
     "@effect/platform": "^0.94.5",
     "@effect/platform-bun": "^0.87.1",
+    "@effect/printer-ansi": "^0.47.0",
     "effect": "^3.19.18",
+    "kleur": "^4.1.5",
     "prompts": "^2.4.2"
   }
 }
