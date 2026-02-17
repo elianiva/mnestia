@@ -5,14 +5,25 @@ Valibot schema definitions for Mnestia types.
 ## Commands
 
 ```bash
-# Type check only (no tests in this package)
-bun run typecheck
-
-# Build declarations
-bun run build
+bun run typecheck     # Type check only (no tests)
+bun run build         # Build declarations
 ```
 
-## Schema Patterns
+## File Structure
+
+```
+src/
+  deck.ts          # Deck configuration schemas
+  slide.ts         # Slide schemas
+  navigation.ts    # Navigation config schemas
+  theme.ts         # Theme module schemas
+  export.ts        # Export configuration schemas
+  index.ts         # Barrel exports
+```
+
+## Patterns
+
+### Schema Definition
 
 Export both schema and inferred type:
 
@@ -27,37 +38,26 @@ export const DeckConfigSchema = v.object({
 export type DeckConfig = v.InferOutput<typeof DeckConfigSchema>;
 ```
 
-## File Naming
+### Optional Fields
 
-Use kebab-case for all files:
-
-```
-src/
-  deck.ts          # Deck configuration schemas
-  slide.ts         # Slide schemas
-  navigation.ts    # Navigation config schemas
-  theme.ts         # Theme module schemas
-  export.ts        # Export configuration schemas
-  index.ts         # Barrel exports
-```
-
-### Imports
-
-Import without extensions:
+Use `v.optional()` for optional fields:
 
 ```typescript
-// ✅ Correct
-import { SlideSchema } from "./slide";
-import type { Slide } from "./slide";
+export const ConfigSchema = v.object({
+  required: v.string(),
+  optional: v.optional(v.string()),
+});
 ```
 
 ## Naming
 
-- **Files**: kebab-case (`deck-config.ts`, `slide-schema.ts`)
-- **Schema variables**: `XxxSchema` suffix
-- **Types**: `Xxx` (without Schema suffix)
-- Use `v.optional()` for optional fields, not `v.nullable()`
+| Category | Convention | Example |
+|----------|-----------|---------|
+| Files | kebab-case | `deck.ts` |
+| Schema variables | XxxSchema | `DeckConfigSchema` |
+| Types | PascalCase | `DeckConfig` |
 
 ## Dependencies
 
-No runtime dependencies except Valibot. No testing - type-only package.
+- `valibot` - Schema validation
+- No testing - type-only package

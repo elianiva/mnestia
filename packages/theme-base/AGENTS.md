@@ -5,119 +5,92 @@ Base theme package with layouts and components for Mnestia slide decks.
 ## Commands
 
 ```bash
-# Development with watch
-bun run dev
-
-# Build
-bun run build
-
-# Type check
-bun run typecheck
-
-# Lint
-bun run lint
+bun run dev           # Development with watch
+bun run build         # Build
+bun run typecheck     # Type check
+bun run lint          # Lint
 ```
 
-## File Naming
-
-Use kebab-case for all files:
+## File Structure
 
 ```
 src/
   layouts/
-    default.tsx         # Standard content layout
-    cover.tsx           # Full-screen title layout
-    center.tsx          # Centered content layout
-    split.tsx           # Two-column layout
-    grid.tsx            # Multi-column grid layout
-    index.ts            # Layout exports
+    default.tsx       # Standard content layout
+    cover.tsx         # Full-screen title layout
+    center.tsx        # Centered content layout
+    split.tsx         # Two-column layout
+    grid.tsx          # Multi-column grid layout
+    index.ts          # Layout exports
   components/
-    code-block.tsx      # Syntax highlighted code
-    image.tsx           # Responsive image with caption
-    quote.tsx           # Styled blockquote
-    table.tsx           # Data table with stripes
-    index.ts            # Component exports
+    code-block.tsx    # Syntax highlighted code
+    image.tsx         # Responsive image with caption
+    quote.tsx         # Styled blockquote
+    table.tsx         # Data table with stripes
+    index.ts          # Component exports
   styles/
-    variables.css       # CSS custom properties
-    global.css          # Base styles and typography
-  setup.ts              # Theme initialization
-  index.ts              # Layout and component exports
-index.ts                # ThemeModule export
+    variables.css     # CSS custom properties
+    global.css        # Base styles and typography
+  setup.ts            # Theme initialization
+index.ts              # ThemeModule export
 ```
 
-## Structure
+## Patterns
 
-```
-src/
-  layouts/
-    default.tsx         - Standard content layout
-    cover.tsx           - Full-screen title layout
-    center.tsx          - Centered content layout
-    split.tsx           - Two-column layout
-    grid.tsx            - Multi-column grid layout
-  components/
-    code-block.tsx      - Syntax highlighted code
-    image.tsx           - Responsive image with caption
-    quote.tsx           - Styled blockquote
-    table.tsx           - Data table with stripes
-  styles/
-    variables.css       - CSS custom properties
-    global.css          - Base styles and typography
-  setup.ts              - Theme initialization
-  index.ts              - Layout and component exports
-index.ts                - ThemeModule export
-```
+### Layouts
 
-### Imports
-
-Import without extensions:
+All layouts accept `className` and `style` props:
 
 ```typescript
-// ✅ Correct
-import { DefaultLayout } from "./layouts/default";
-import { CodeBlock } from "./components/code-block";
-import type { ThemeModule } from "@mnestia/schema";
+// layouts/default.tsx
+interface DefaultLayoutProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function DefaultLayout({ children, className }: DefaultLayoutProps) {
+  return (
+    <div className={cn("p-8 max-w-4xl mx-auto", className)}>
+      {children}
+    </div>
+  );
+}
 ```
 
-## Layouts
+### Components
 
-All layouts accept `className` and `style` props for customization.
+```typescript
+// components/code-block.tsx
+interface CodeBlockProps {
+  code: string;
+  language?: string;
+}
 
-### DefaultLayout
-Standard content layout with padding and max-width.
+export function CodeBlock({ code, language }: CodeBlockProps) {
+  // implementation
+}
+```
 
-### CoverLayout
-Full-screen centered layout for title slides.
-Props: `title`, `subtitle`, `children`
+### Testing
 
-### CenterLayout
-Centers content both horizontally and vertically.
+```typescript
+import { test, expect, describe } from "bun:test";
 
-### SplitLayout
-Two-column layout with configurable ratio.
-Props: `left`, `right`, `ratio` (50-50, 60-40, 70-30, etc.)
+describe("feature", () => {
+  test("should work", () => {
+    expect(result).toBe(expected);
+  });
+});
+```
 
-### GridLayout
-Multi-column CSS grid layout.
-Props: `columns` (number or string array), `gap` (sm, md, lg)
+## Naming
 
-## Components
-
-### CodeBlock
-Syntax highlighted code display.
-Props: `code`, `language?`, `filename?`, `showLineNumbers?`
-
-### Image
-Responsive image with caption support.
-Props: `src`, `alt`, `caption?`, `objectFit?`
-
-### Quote
-Styled blockquote with attribution.
-Props: `quote`, `author?`, `source?`
-
-### Table
-Data table with striped rows option.
-Props: `headers`, `rows`, `striped?`
+| Category | Convention | Example |
+|----------|-----------|---------|
+| Files | kebab-case | `code-block.tsx` |
+| Layouts | PascalCase + Layout suffix | `DefaultLayout` |
+| Components | PascalCase | `CodeBlock` |
+| Types | PascalCase | `LayoutProps` |
 
 ## Usage
 
@@ -133,7 +106,7 @@ const { CodeBlock, Image, Quote, Table } = themeBase.components;
 
 ## CSS Variables
 
-The theme exports CSS variables for colors, typography, and spacing. Import the styles in your application:
+Import theme styles:
 
 ```typescript
 import "@mnestia/theme-base/src/styles/variables.css";
@@ -146,18 +119,16 @@ import "@mnestia/theme-base/src/styles/global.css";
 - `--mnestia-primary` - Primary accent color
 - `--mnestia-accent` - Secondary accent color
 
-### Typography
-- `--mnestia-font-sans` - Sans-serif font stack
-- `--mnestia-font-mono` - Monospace font stack
-- `--mnestia-font-size-*` - Size scale (xs to 6xl)
-
-### Spacing
-- `--mnestia-space-*` - Spacing scale (1 to 20)
-
 ## Dark Mode
 
-Add `data-theme="dark"` attribute to enable dark mode:
+Add `data-theme="dark"` attribute:
 
 ```html
 <html data-theme="dark">
 ```
+
+## Dependencies
+
+- `@mnestia/schema` - Type schemas
+- `react` - Peer dependency
+- `tailwindcss` - Styling
