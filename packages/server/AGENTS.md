@@ -5,7 +5,7 @@ Backend realtime slide system built with **Elysia (REST + WebSocket)** inside a 
 - TanStack AI (agent layer)
 - Effect (functional core / domain logic discipline)
 
-Deck management via REST is intentionally skipped for now.  
+Deck management via REST is intentionally skipped for now.
 Focus: realtime sync + AI-driven slide mutation structure.
 
 ---
@@ -74,8 +74,8 @@ Used for:
 
 ## Effect
 
-https://effect.website/  
-https://effect.website/docs/code-style/guidelines/  
+https://effect.website/
+https://effect.website/docs/code-style/guidelines/
 https://ethanniser.dev/blog/effect-best-practices/
 
 Effect is used for:
@@ -137,7 +137,7 @@ State Update
     ↓
 WebSocket Broadcast
 
-AI never mutates state directly.  
+AI never mutates state directly.
 All state changes go through Slide Service (Effect-based).
 
 ---
@@ -318,11 +318,11 @@ Effect layers must be initialized before transport handlers.
 
 # 12. Naming Convention
 
-Files: kebab-case  
-Types: PascalCase (from `../schema`)  
-WS events: UPPER_SNAKE_CASE  
-Effect services: `*Service`  
-Effect layers: `*Layer`  
+Files: kebab-case
+Types: PascalCase (from `../schema`)
+WS events: UPPER_SNAKE_CASE
+Effect services: `*Service`
+Effect layers: `*Layer`
 Agent modules: `agent-*`
 
 ---
@@ -358,4 +358,16 @@ Later:
 
 http://localhost:3000
 
-# Use Bun btw
+<!-- effect-solutions:start -->
+## Effect Best Practices
+
+**IMPORTANT:** Always consult effect-solutions before writing Effect code.
+
+1. Run `effect-solutions list` to see available guides
+2. Run `effect-solutions show <topic>...` for relevant patterns (supports multiple topics)
+3. Search `.reference/effect/` for real implementations (run `effect-solutions setup` first)
+
+Topics: quick-start, project-setup, tsconfig, basics, services-and-layers, data-modeling, error-handling, config, testing, cli.
+
+Never guess at Effect patterns - check the guide first.
+<!-- effect-solutions:end -->

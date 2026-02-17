@@ -11,14 +11,20 @@
     "test": "bun test",
     "lint": "oxlint --config ../../oxlint.json .",
     "format": "oxfmt --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare": "effect-language-service patch"
   },
   "dependencies": {
+    "@effect/platform": "^0.94.5",
+    "@effect/platform-bun": "^0.87.1",
     "@mnestia/core": "workspace:*",
     "@mnestia/schema": "workspace:*",
+    "effect": "^3.19.18",
     "elysia": "latest"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@effect/language-service": "^0.74.0",
+    "bun-types": "latest",
+    "typescript": "^5.9.3"
   }
 }
