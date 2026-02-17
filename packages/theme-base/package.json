@@ -2,24 +2,54 @@
   "name": "@mnestia/theme-base",
   "version": "0.0.1",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "./setup": {
+      "types": "./src/setup.ts",
+      "import": "./src/setup.ts"
     },
-    "./styles.css": "./dist/styles.css",
+    "./components/code-block": {
+      "types": "./src/components/code-block.tsx",
+      "import": "./src/components/code-block.tsx"
+    },
+    "./components/image": {
+      "types": "./src/components/image.tsx",
+      "import": "./src/components/image.tsx"
+    },
+    "./components/quote": {
+      "types": "./src/components/quote.tsx",
+      "import": "./src/components/quote.tsx"
+    },
+    "./components/table": {
+      "types": "./src/components/table.tsx",
+      "import": "./src/components/table.tsx"
+    },
+    "./layouts/default": {
+      "types": "./src/layouts/default.tsx",
+      "import": "./src/layouts/default.tsx"
+    },
+    "./layouts/cover": {
+      "types": "./src/layouts/cover.tsx",
+      "import": "./src/layouts/cover.tsx"
+    },
+    "./layouts/center": {
+      "types": "./src/layouts/center.tsx",
+      "import": "./src/layouts/center.tsx"
+    },
+    "./layouts/split": {
+      "types": "./src/layouts/split.tsx",
+      "import": "./src/layouts/split.tsx"
+    },
+    "./layouts/grid": {
+      "types": "./src/layouts/grid.tsx",
+      "import": "./src/layouts/grid.tsx"
+    },
+    "./styles/*": "./src/styles/*",
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "bun build ./index.ts --outdir ./dist --target bun && cp ./src/styles/*.css ./dist/",
-    "dev": "bun build ./index.ts --outdir ./dist --target bun --watch",
-    "lint": "oxlint --config ../../oxlint.json .",
+    "build": "echo 'No build needed'",
+    "dev": "echo 'No dev needed'",
+    "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
     "format": "oxlint --format .",
     "typecheck": "tsc --noEmit"
   },

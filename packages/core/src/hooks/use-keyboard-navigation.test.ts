@@ -1,6 +1,6 @@
 import { test, expect, describe } from "bun:test";
 import type { UseKeyboardNavigationOptions } from "./use-keyboard-navigation.js";
-import type { NavigationConfig } from "@mnestia/schema";
+import type { NavigationConfig } from "@mnestia/schema/navigation";
 
 describe("useKeyboardNavigation", () => {
 	test("options interface accepts valid config", () => {
@@ -9,24 +9,24 @@ describe("useKeyboardNavigation", () => {
 			enableMouseClick: true,
 		};
 
-		let nextCalled = false;
-		let prevCalled = false;
-		let firstCalled = false;
-		let lastCalled = false;
+		let _nextCalled = false;
+		let _prevCalled = false;
+		let _firstCalled = false;
+		let _lastCalled = false;
 
 		const options: UseKeyboardNavigationOptions = {
 			config,
 			onNext: () => {
-				nextCalled = true;
+				_nextCalled = true;
 			},
 			onPrev: () => {
-				prevCalled = true;
+				_prevCalled = true;
 			},
 			onFirst: () => {
-				firstCalled = true;
+				_firstCalled = true;
 			},
 			onLast: () => {
-				lastCalled = true;
+				_lastCalled = true;
 			},
 			canGoNext: true,
 			canGoPrev: true,
@@ -37,7 +37,7 @@ describe("useKeyboardNavigation", () => {
 		expect(typeof options.onPrev).toBe("function");
 
 		options.onNext();
-		expect(nextCalled).toBe(true);
+		expect(_nextCalled).toBe(true);
 	});
 
 	test("supports vim mode", () => {

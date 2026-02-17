@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from "react";
-import type { NavigationConfig, NavigationMode } from "@mnestia/schema";
+import type { NavigationConfig } from "@mnestia/schema/navigation";
 
 export interface UseKeyboardNavigationOptions {
 	config: NavigationConfig;

@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { DeckConfig, Slide } from "@mnestia/schema";
+import type { DeckConfig } from "@mnestia/schema/deck";
+import type { Slide } from "@mnestia/schema/slide";
 
 export interface DeckState {
 	currentSlide: number;

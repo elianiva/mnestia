@@ -63,6 +63,18 @@ import type { MyType } from "../types";
 import { something } from "@mnestia/schema";
 ```
 
+**No barrel imports** - Import directly from source files, never from `index.ts`:
+
+```typescript
+// ❌ Wrong - barrel import
+import { Button } from "./components";
+import { useAuth } from "@mnestia/core";
+
+// ✅ Correct - direct import
+import { Button } from "./components/button";
+import { useAuth } from "@mnestia/core/src/hooks/use-auth";
+```
+
 ### TypeScript
 
 ```typescript

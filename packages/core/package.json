@@ -3,23 +3,25 @@
   "version": "0.0.1",
   "type": "module",
   "private": true,
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "./define-deck": {
+      "types": "./src/define-deck.ts",
+      "import": "./src/define-deck.ts"
+    },
+    "./hooks/use-keyboard-navigation": {
+      "types": "./src/hooks/use-keyboard-navigation.ts",
+      "import": "./src/hooks/use-keyboard-navigation.ts"
+    },
+    "./store/deck-store": {
+      "types": "./src/store/deck-store.ts",
+      "import": "./src/store/deck-store.ts"
     },
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "bun build ./index.ts --outdir ./dist --target bun",
-    "dev": "bun build ./index.ts --outdir ./dist --target bun --watch",
-    "lint": "oxlint --config ../../oxlint.json .",
+    "build": "echo 'No build needed'",
+    "dev": "echo 'No dev needed'",
+    "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
     "format": "oxlint --format .",
     "typecheck": "tsc --noEmit",
     "test": "bun test"

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { LayoutProps } from "@mnestia/schema";
+import type { LayoutProps } from "@mnestia/schema/theme";
 
 export interface DefaultLayoutProps extends LayoutProps {
   children: ReactNode;

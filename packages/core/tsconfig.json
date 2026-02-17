@@ -3,11 +3,10 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "./dist",
-    "composite": true,
     "declaration": true,
     "declarationMap": true,
     "lib": ["ESNext", "DOM"]
   },
-  "include": ["index.ts", "src/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

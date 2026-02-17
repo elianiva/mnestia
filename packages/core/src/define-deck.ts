@@ -1,9 +1,6 @@
-import type {
-	DeckConfig,
-	DeckDefinitionInput,
-	Slide,
-	NavigationConfig,
-} from "@mnestia/schema";
+import type { DeckConfig } from "@mnestia/schema/deck";
+import type { Slide } from "@mnestia/schema/slide";
+import type { NavigationConfig } from "@mnestia/schema/navigation";
 
 const DEFAULT_THEME = "@mnestia/theme-base";
 

@@ -1,6 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import { createInitialState, createDeckStore } from "./deck-store.js";
-import type { DeckConfig, Slide } from "@mnestia/schema";
+import type { DeckConfig } from "@mnestia/schema/deck";
+import type { Slide } from "@mnestia/schema/slide";
 
 const mockSlide = (id: string, index: number): Slide => ({
 	id,
