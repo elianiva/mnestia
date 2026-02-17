@@ -1,10 +1,10 @@
 import { CliConfig, Command } from "@effect/cli";
 import { BunContext, BunRuntime } from "@effect/platform-bun";
-import * as Effect from "effect/Effect";
-import * as Layer from "effect/Layer";
-import { buildCommand } from "./commands/build.js";
-import { createCommand } from "./commands/create.js";
-import { startCommand } from "./commands/start.js";
+import { Effect, Layer, Logger } from "effect";
+import { buildCommand } from "./commands/build";
+import { createCommand } from "./commands/create";
+import { startCommand } from "./commands/start";
+import { VERSION } from "./version";
 
 const command = Command.make("mnestia").pipe(
   Command.withDescription("CLI tool for Mnestia slide deck framework."),
@@ -17,11 +17,15 @@ const ConfigLive = CliConfig.layer({
 
 const cli = Command.run(command, {
   name: "mnestia",
-  version: "0.0.1",
+  version: VERSION,
 });
 
-Effect.suspend(() => cli(process.argv)).pipe(
-  Effect.provide(Layer.merge(ConfigLive, BunContext.layer)),
-  Effect.tapErrorCause(Effect.logError),
-  BunRuntime.runMain,
+const AppLayer = Layer.merge(ConfigLive, BunContext.layer).pipe(
+  Layer.provide(Logger.remove(Logger.defaultLogger)),
 );
+
+const program = Effect.suspend(() => cli(process.argv)).pipe(
+  Effect.provide(AppLayer),
+);
+
+BunRuntime.runMain(program);
