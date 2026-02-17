@@ -3,20 +3,8 @@
   "version": "0.0.1",
   "type": "module",
   "exports": {
-    "./deck": {
-      "types": "./src/deck.ts"
-    },
-    "./export": {
-      "types": "./src/export.ts"
-    },
-    "./navigation": {
-      "types": "./src/navigation.ts"
-    },
-    "./slide": {
-      "types": "./src/slide.ts"
-    },
-    "./theme": {
-      "types": "./src/theme.ts"
+    ".": {
+      "types": "./src/index.ts"
     },
     "./package.json": "./package.json"
   },

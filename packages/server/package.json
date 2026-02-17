@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@mnestia/core": "workspace:*",
+    "@mnestia/schema": "workspace:*",
     "elysia": "latest"
   },
   "devDependencies": {
