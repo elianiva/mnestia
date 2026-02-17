@@ -1,6 +1,9 @@
 node_modules
 dist
 .reference
+.env
+.env.local
+.env.*.local
 
 # moon
 .moon/cache

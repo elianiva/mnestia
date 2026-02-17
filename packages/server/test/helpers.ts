@@ -1,7 +1,8 @@
 import { expect } from "bun:test";
-import { Effect, Exit, Cause, Option, Layer } from "effect";
+import { Effect, Exit, Cause, Option, Layer, Redacted } from "effect";
 import { Elysia, type AnyElysia } from "elysia";
 import type { DeckStateInternal } from "../src/domain/slide-store";
+import type { AppConfig } from "../src/config/app-config";
 import { SlideService } from "../src/domain/slide-service";
 import { createSlideRuntime } from "../src/ws/effect-runtime";
 
@@ -29,14 +30,27 @@ export function seedDeck(
 
 // ── App Factories ─────────────────────────────────────────────────
 
-export function createDecoratedApp() {
+export function createTestConfig(
+  overrides: Partial<AppConfig> = {}
+): AppConfig {
+  return {
+    port: 0,
+    host: "localhost",
+    openaiApiKey: Option.none(),
+    ...overrides,
+  };
+}
+
+export function createDecoratedApp(configOverrides: Partial<AppConfig> = {}) {
   const storeMap = new Map<string, DeckStateInternal>();
   const runtime = createSlideRuntime(storeMap);
+  const appConfig = createTestConfig(configOverrides);
   const app = new Elysia()
+    .decorate("appConfig", appConfig)
     .decorate("slideStore", storeMap)
     .decorate("slideRuntime", runtime);
 
-  return { app, storeMap };
+  return { app, storeMap, appConfig };
 }
 
 // ── Server Helpers ────────────────────────────────────────────────

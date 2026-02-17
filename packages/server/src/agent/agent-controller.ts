@@ -1,10 +1,11 @@
 import { Elysia } from "elysia";
 import { chat, toServerSentEventsResponse, maxIterations } from "@tanstack/ai";
-import { openaiText } from "@tanstack/ai-openai";
-import { Effect, ManagedRuntime } from "effect";
+import { createOpenaiChat } from "@tanstack/ai-openai";
+import { Effect, ManagedRuntime, Option, Redacted } from "effect";
 import type { ServerDeckState } from "@mnestia/schema";
 import type { SlideService } from "../domain/slide-service";
 import type { DeckStateInternal } from "../domain/slide-store";
+import type { AppConfig } from "../config/app-config";
 import { broadcastToClients } from "../ws/effect-runtime";
 import { createServerTools, type BroadcastFn } from "./agent-service";
 
@@ -29,6 +30,7 @@ Guidelines:
 interface ControllerContext {
   slideStore: Map<string, DeckStateInternal>;
   slideRuntime: ManagedRuntime.ManagedRuntime<SlideService, never>;
+  appConfig: AppConfig;
 }
 
 function buildBroadcast(
@@ -55,7 +57,7 @@ export const agentController = new Elysia({ name: "agent-controller" })
       deckId: string;
     };
 
-    const { slideStore: storeMap, slideRuntime: runtime } =
+    const { slideStore: storeMap, slideRuntime: runtime, appConfig } =
       ctx as unknown as ControllerContext;
 
     // Build broadcast function
@@ -64,9 +66,8 @@ export const agentController = new Elysia({ name: "agent-controller" })
     // Create server tools with the shared runtime (no per-request Layer rebuild)
     const tools = createServerTools(runtime, broadcast);
 
-    // Check for API key
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    // Check for API key via Effect Config (Redacted + Option)
+    if (Option.isNone(appConfig.openaiApiKey)) {
       return new Response(
         JSON.stringify({
           error: "OPENAI_API_KEY not configured",
@@ -79,6 +80,8 @@ export const agentController = new Elysia({ name: "agent-controller" })
         }
       );
     }
+
+    const apiKey = Redacted.value(appConfig.openaiApiKey.value);
 
     // Build context-aware system prompt
     const contextPrompt = deckId
@@ -100,7 +103,7 @@ export const agentController = new Elysia({ name: "agent-controller" })
 
     // Create streaming chat with tools
     const stream = chat({
-      adapter: openaiText("gpt-4o"),
+      adapter: createOpenaiChat("gpt-4o", apiKey),
       messages: chatMessages,
       tools: [...tools],
       systemPrompts: [contextPrompt, ...inlineSystemPrompts],

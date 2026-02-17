@@ -1,40 +1,36 @@
-import { test, expect, describe, beforeEach, afterEach } from "bun:test";
+import { test, expect, describe, afterEach } from "bun:test";
+import { Option, Redacted } from "effect";
 import { agentController } from "../../src/agent/agent-controller";
 import { seedDeck, createDecoratedApp, startApp } from "../helpers";
 
 // ── Test Helpers ──────────────────────────────────────────────────
 
-function createTestApp() {
-  const { app, storeMap } = createDecoratedApp();
+function createTestApp(configOverrides = {}) {
+  const { app, storeMap, appConfig } = createDecoratedApp(configOverrides);
   const testApp = app.use(agentController);
-  return { app: testApp, storeMap };
+  return { app: testApp, storeMap, appConfig };
+}
+
+function createTestAppWithApiKey() {
+  return createTestApp({
+    openaiApiKey: Option.some(Redacted.make("test-fake-api-key")),
+  });
 }
 
 // ── Tests ─────────────────────────────────────────────────────────
 
 let cleanup: (() => void) | undefined;
-let originalApiKey: string | undefined;
-
-beforeEach(() => {
-  originalApiKey = process.env.OPENAI_API_KEY;
-  delete process.env.OPENAI_API_KEY;
-});
 
 afterEach(() => {
   if (cleanup) {
     cleanup();
     cleanup = undefined;
   }
-  if (originalApiKey !== undefined) {
-    process.env.OPENAI_API_KEY = originalApiKey;
-  } else {
-    delete process.env.OPENAI_API_KEY;
-  }
 });
 
 describe("Agent Controller", () => {
-  describe("POST /agent/chat", () => {
-    test("returns 503 when OPENAI_API_KEY is not set", async () => {
+  describe("POST /agent/chat (no API key configured)", () => {
+    test("returns 503 when OPENAI_API_KEY is not configured", async () => {
       const { app } = createTestApp();
       const { server, baseUrl } = await startApp(app);
       cleanup = () => server.stop();
@@ -136,6 +132,28 @@ describe("Agent Controller", () => {
 
       // Should not crash — system messages are filtered out
       expect(response.status).toBe(503);
+    });
+  });
+
+  describe("POST /agent/chat (API key configured)", () => {
+    test("does not return 503 when OPENAI_API_KEY is configured", async () => {
+      const { app } = createTestAppWithApiKey();
+      const { server, baseUrl } = await startApp(app);
+      cleanup = () => server.stop();
+
+      const response = await fetch(`${baseUrl}/agent/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: "Hello" }],
+          deckId: "test-deck",
+        }),
+      });
+
+      // With a (fake) API key configured, the server should NOT return 503.
+      // It will likely fail downstream (e.g. network error to OpenAI), but
+      // it proves the config check passed.
+      expect(response.status).not.toBe(503);
     });
   });
 
