@@ -1,11 +1,11 @@
 [
   {
     "category": "commit",
-    "name": "S1-C1: Types Package Setup",
-    "description": "Initialize @mnestia/types package structure",
+    "name": "S1-C1: Schema Package Setup",
+    "description": "Initialize @mnestia/schema package structure",
     "steps": [
-      "Create packages/types/ directory",
-      "Create package.json with name @mnestia/types, version 0.0.1",
+      "Create packages/schema/ directory",
+      "Create package.json with name @mnestia/schema, version 0.0.1",
       "Create tsconfig.json for declaration emit",
       "Add build script: tsc --emitDeclarationOnly",
       "Create src/index.ts entry point"
@@ -15,44 +15,44 @@
   },
   {
     "category": "commit",
-    "name": "S1-C2: Core Type Definitions",
-    "description": "Define Slide, SlideFrontmatter, and basic types",
+    "name": "S1-C2: Core Schema Definitions",
+    "description": "Define Slide, SlideFrontmatter, and valibot schemas",
     "steps": [
-      "Create src/slide.ts with Slide interface (id, index, component, frontmatter, filepath)",
-      "Create SlideFrontmatter interface (layout, transition, background, notes, clicks)",
-      "Create src/navigation.ts with NavigationMode enum ('standard' | 'vim' | 'both')",
-      "Create NavigationConfig interface (mode, shortcuts)",
+      "Create src/slide.ts with Slide schema and type (id, index, component, frontmatter, filepath)",
+      "Create SlideFrontmatter schema and type (layout, transition, background, notes, clicks)",
+      "Create src/navigation.ts with NavigationMode union ('standard' | 'vim' | 'both')",
+      "Create NavigationConfig schema and type (mode, shortcuts)",
       "Export all from src/index.ts"
     ],
-    "dependencies": ["S1-C1: Types Package Setup"],
+    "dependencies": ["S1-C1: Schema Package Setup"],
     "passes": false
   },
   {
     "category": "commit",
-    "name": "S1-C3: Deck and Theme Types",
-    "description": "Define DeckConfig, ThemeModule, and export types",
+    "name": "S1-C3: Deck and Theme Schemas",
+    "description": "Define DeckConfig, ThemeModule, and export schemas",
     "steps": [
-      "Create src/deck.ts with DeckConfig interface (slides, theme, navigation, aspectRatio, export)",
-      "Create DeckDefinitionInput type for defineDeck input",
-      "Create src/theme.ts with ThemeModule interface (name, layouts, components, styles, setup)",
-      "Create src/export.ts with ExportConfig and ExportOptions interfaces",
+      "Create src/deck.ts with DeckConfig schema and type (slides, theme, navigation, aspectRatio, export)",
+      "Create DeckDefinitionInput schema and type for defineDeck input",
+      "Create src/theme.ts with ThemeModule schema and type (name, layouts, components, styles, setup)",
+      "Create src/export.ts with ExportConfig and ExportOptions schemas and types",
       "Create src/index.ts barrel exports"
     ],
-    "dependencies": ["S1-C2: Core Type Definitions"],
+    "dependencies": ["S1-C2: Core Schema Definitions"],
     "passes": false
   },
   {
     "category": "commit",
-    "name": "S1-C4: Types Package Build",
-    "description": "Configure and verify types package build",
+    "name": "S1-C4: Schema Package Build",
+    "description": "Configure and verify schema package build",
     "steps": [
+      "Add valibot as dependency",
       "Add 'types' field to package.json pointing to dist/index.d.ts",
       "Add 'files' array to include dist/",
       "Run bun run build to generate .d.ts files",
-      "Verify dist/ contains all type declarations",
-      "Test import from another package"
+      "Verify dist/ contains all type declarations"
     ],
-    "dependencies": ["S1-C3: Deck and Theme Types"],
+    "dependencies": ["S1-C3: Deck and Theme Schemas"],
     "passes": false
   },
   {
@@ -60,12 +60,12 @@
     "name": "S2-C1: Core Package Dependencies",
     "description": "Add dependencies to @mnestia/core",
     "steps": [
-      "Add @mnestia/types as dependency in packages/core/package.json",
+      "Add @mnestia/schema as dependency in packages/core/package.json",
       "Add zustand ^5.0.0 as dependency",
       "Run bun install to update lockfile",
       "Verify node_modules includes zustand"
     ],
-    "dependencies": ["S1-C4: Types Package Build"],
+    "dependencies": ["S1-C4: Schema Package Build"],
     "passes": false
   },
   {
@@ -148,11 +148,11 @@
     "steps": [
       "Create packages/theme-base/ directory",
       "Create package.json with name @mnestia/theme-base",
-      "Add @mnestia/types as dependency",
+      "Add @mnestia/schema as dependency",
       "Create directory structure: layouts/, components/, styles/",
       "Create src/index.ts entry"
     ],
-    "dependencies": ["S1-C4: Types Package Build"],
+    "dependencies": ["S1-C4: Schema Package Build"],
     "passes": false
   },
   {
@@ -328,7 +328,7 @@
     "name": "S4-C2: Client Dependencies",
     "description": "Add required dependencies to client package",
     "steps": [
-      "Add @mnestia/core and @mnestia/types as dependencies",
+      "Add @mnestia/core and @mnestia/schema as dependencies",
       "Add @mnestia/theme-base as devDependency",
       "Add react and react-dom peer dependencies",
       "Install shadcn/ui components: button, slider",
@@ -442,11 +442,11 @@
     "steps": [
       "Create packages/parser/ directory",
       "Create package.json with @mnestia/parser name",
-      "Add @mnestia/types dependency",
+      "Add @mnestia/schema dependency",
       "Add @mdx-js/mdx, remark, rehype dependencies",
       "Create src/index.ts entry"
     ],
-    "dependencies": ["S1-C4: Types Package Build"],
+    "dependencies": ["S1-C4: Schema Package Build"],
     "passes": false
   },
   {

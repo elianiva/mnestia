@@ -1,0 +1,21 @@
+{
+  "name": "@mnestia/schema",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc --emitDeclarationOnly",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "valibot": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.3"
+  }
+}
