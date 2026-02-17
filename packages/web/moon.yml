@@ -3,6 +3,8 @@ platform: 'bun'
 dependsOn:
   - id: 'core'
     scope: 'build'
+  - id: 'schema'
+    scope: 'build'
 
 tasks:
   build:

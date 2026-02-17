@@ -1,33 +1,20 @@
 platform: 'bun'
 
 dependsOn:
-  - id: 'core'
-    scope: 'build'
-  - id: 'schema'
+  - id: 'theme-base'
     scope: 'build'
 
 tasks:
   build:
     command: 'bun run build'
-    deps:
-      - 'core:build'
     inputs:
       - 'src/**/*'
     outputs:
       - 'dist'
   dev:
     command: 'bun run dev'
-    deps:
-      - 'core:build'
     inputs:
       - 'src/**/*'
-    local: true
-  start:
-    command: 'bun run start'
-    deps:
-      - 'build'
-    inputs:
-      - 'dist/**/*'
     local: true
   lint:
     command: 'bun run lint'

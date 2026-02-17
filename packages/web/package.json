@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "bun test",
     "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
-    "format": "oxlint --format .",
+    "format": "oxlint --format --ignore-pattern 'dist/**' .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -1,0 +1,24 @@
+{
+  "name": "@mnestia/example-slides",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "echo 'No build needed'",
+    "dev": "echo 'No dev needed'",
+    "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
+    "format": "oxlint --format --ignore-pattern 'dist/**' .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@mnestia/theme-base": "workspace:*",
+    "@mnestia/core": "workspace:*",
+    "@mnestia/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7.3",
+    "oxlint": "^0.15.12"
+  }
+}

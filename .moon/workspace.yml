@@ -5,5 +5,9 @@ $schema: './cache/schemas/workspace.json'
 
 projects:
   core: 'packages/core'
-  web: 'packages/web'
+  schema: 'packages/schema'
   server: 'packages/server'
+  web: 'packages/web'
+  theme-base: 'packages/theme-base'
+  cli: 'packages/cli'
+  example-slides: 'packages/example-slides'

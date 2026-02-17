@@ -50,8 +50,9 @@
     "build": "echo 'No build needed'",
     "dev": "echo 'No dev needed'",
     "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
-    "format": "oxlint --format .",
-    "typecheck": "tsc --noEmit"
+    "format": "oxlint --format --ignore-pattern 'dist/**' .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "peerDependencies": {
     "react": "^19.2.0",

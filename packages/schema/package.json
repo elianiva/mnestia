@@ -22,6 +22,9 @@
   },
   "scripts": {
     "build": "tsc --emitDeclarationOnly",
+    "dev": "tsc --emitDeclarationOnly --watch",
+    "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
+    "format": "oxlint --format --ignore-pattern 'dist/**' .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

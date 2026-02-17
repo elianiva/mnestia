@@ -1,40 +1,25 @@
 platform: 'bun'
 
-dependsOn:
-  - id: 'core'
-    scope: 'build'
-  - id: 'schema'
-    scope: 'build'
-
 tasks:
   build:
     command: 'bun run build'
-    deps:
-      - 'core:build'
     inputs:
       - 'src/**/*'
     outputs:
       - 'dist'
   dev:
     command: 'bun run dev'
-    deps:
-      - 'core:build'
     inputs:
       - 'src/**/*'
-    local: true
-  start:
-    command: 'bun run start'
-    deps:
-      - 'build'
-    inputs:
-      - 'dist/**/*'
+    outputs:
+      - 'dist'
     local: true
   lint:
-    command: 'bun run lint'
+    command: 'oxlint --config ../../oxlint.json --ignore-pattern "dist/**" .'
     inputs:
       - 'src/**/*.{ts,tsx}'
   format:
-    command: 'bun run format'
+    command: 'oxlint --format --ignore-pattern "dist/**" .'
     inputs:
       - 'src/**/*.{ts,tsx}'
   typecheck:
@@ -42,8 +27,3 @@ tasks:
     inputs:
       - 'src/**/*.{ts,tsx}'
       - 'tsconfig.json'
-  test:
-    command: 'bun run test'
-    inputs:
-      - 'src/**/*'
-      - '**/*.test.{ts,tsx}'
