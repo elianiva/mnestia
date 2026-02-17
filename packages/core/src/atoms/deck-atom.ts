@@ -14,7 +14,7 @@ export interface DeckAtomValue extends DeckState {
 	slides: Slide[];
 }
 
-const DEFAULT_STATE: DeckState = {
+export const DEFAULT_STATE: DeckState = {
 	currentSlide: 0,
 	totalSlides: 0,
 	history: [],
