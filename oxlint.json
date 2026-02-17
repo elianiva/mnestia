@@ -1,0 +1,16 @@
+{
+  "plugins": ["import", "react", "react-hooks", "react-perf", "jsx-a11y", "tree-shaking", "promise", "oxc"],
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "node": true
+  },
+  "rules": {
+    "eqeqeq": "error",
+    "no-unused-vars": "error",
+    "no-console": "warn",
+    "prefer-const": "error",
+    "no-var": "error",
+    "no-debugger": "error"
+  }
+}
