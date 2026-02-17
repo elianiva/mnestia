@@ -1,16 +1,17 @@
-#!/usr/bin/env bun
-import cac from "cac";
+import { Effect, Layer } from "effect";
+import { Command } from "@effect/cli";
+import { BunContext, BunRuntime } from "@effect/platform-bun";
+import { createCommand } from "./commands/create";
 
-const cli = cac("mnestia");
+const mainCommand = Command.make("mnestia").pipe(
+  Command.withSubcommands([createCommand]),
+);
 
-cli
-  .command("dev", "Start development server")
-  .option("-p, --port <port>", "Port to run on", {
-    default: 3000,
-  })
-  .action((options) => {
-    console.log(`Starting dev server on port ${options.port}...`);
-  });
+const cli = Command.run(mainCommand, {
+  name: "mnestia",
+  version: "0.0.1",
+});
 
-cli.help();
-cli.parse();
+BunRuntime.runMain(
+  cli(process.argv).pipe(Effect.provide(BunContext.layer)),
+);
