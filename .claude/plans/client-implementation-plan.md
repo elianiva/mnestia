@@ -50,15 +50,15 @@ Create React Context for deck state and actions.
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/components/deck-provider.tsx` | Create | Context provider with store initialization |
+| `src/components/deck-provider.tsx` | Create | Context provider with atom initialization |
 | `src/hooks/use-deck.ts` | Create | Hook to access deck state/actions |
 | `src/lib/deck-context.ts` | Create | Context definition (separate for tree-shaking) |
 
 **Implementation Details**:
 - `DeckProvider` accepts `DeckConfig` prop
-- Initializes store with `createDeckStore(config)` from @mnestia/core
+- Initializes atom with `createDeckAtom(config)` from @mnestia/core
 - Loads theme via `resolveTheme(config.theme)` on mount
-- Provides both store and theme via context
+- Provides both atom and theme via context
 - `useDeck()` returns: `{ currentSlide, totalSlides, slides, nextSlide, prevSlide, goToSlide, goToFirstSlide, goToLastSlide, canGoNext, canGoPrev, theme }`
 
 ---
@@ -108,13 +108,13 @@ Set up routes with URL persistence and keyboard navigation.
 |------|--------|---------|
 | `src/routes/slide.$number.tsx` | Create | Dynamic route for slides |
 | `src/routes/index.tsx` | Modify | Redirect to /slide/1 |
-| `src/hooks/use-slide-persistence.ts` | Create | Sync URL with store and localStorage |
+| `src/hooks/use-slide-persistence.ts` | Create | Sync URL with atom and localStorage |
 | `src/routes/__root.tsx` | Modify | Add keyboard navigation and DeckProvider |
 
 **Implementation Details**:
 
 **use-slide-persistence.ts**:
-- Watches `currentSlide` from store
+- Watches `currentSlide` from atom via useAtom subscription
 - Updates URL via TanStack Router navigate
 - Saves to localStorage on change
 - On mount: checks URL param, falls back to localStorage, defaults to 0
@@ -127,7 +127,7 @@ Set up routes with URL persistence and keyboard navigation.
 **__root.tsx**:
 - Wraps children in `DeckProvider` (needs deck config source)
 - Uses `useKeyboardNavigation` from @mnestia/core
-- Connects keyboard actions to deck store methods
+- Connects keyboard actions to deck atom methods
 
 **index.tsx**:
 - BeforeLoad/loader redirects to `/slide/1`

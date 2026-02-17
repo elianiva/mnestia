@@ -61,41 +61,41 @@
     "description": "Add dependencies to @mnestia/core",
     "steps": [
       "Add @mnestia/schema as dependency in packages/core/package.json",
-      "Add zustand ^5.0.0 as dependency",
+      "Add @effect-atom/atom-react as dependency",
       "Run bun install to update lockfile",
-      "Verify node_modules includes zustand"
+      "Verify node_modules includes @effect-atom/atom-react"
     ],
     "dependencies": ["S1-C4: Schema Package Build"],
     "passes": false
   },
-  {
-    "category": "commit",
-    "name": "S2-C2: Deck Store State",
-    "description": "Create Zustand store for deck state",
-    "steps": [
-      "Create src/store/deckStore.ts",
-      "Define DeckState interface with currentSlide, totalSlides, history, isPresenterMode",
-      "Create initial state factory function",
-      "Create store with create<DeckState>()",
-      "Export useDeckStore hook"
-    ],
-    "dependencies": ["S2-C1: Core Package Dependencies"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S2-C3: Navigation Actions",
-    "description": "Add navigation methods to deck store",
-    "steps": [
-      "Add nextSlide action that increments currentSlide and pushes to history",
-      "Add prevSlide action that decrements currentSlide",
-      "Add goToSlide(index) action with bounds checking",
-      "Add goToFirstSlide and goToLastSlide convenience actions",
-      "Add canGoNext and canGoPrev computed selectors"
-    ],
-    "dependencies": ["S2-C2: Deck Store State"],
-    "passes": false
-  },
+    {
+      "category": "commit",
+      "name": "S2-C2: Deck Atom State",
+      "description": "Create effect-atom for deck state",
+      "steps": [
+        "Create src/atoms/deck-atom.ts",
+        "Define DeckState interface with currentSlide, totalSlides, history, isPresenterMode",
+        "Create createDeckAtom(config) factory function using Atom.make",
+        "Use Atom.keepAlive for persistent state",
+        "Export DeckAtom type"
+      ],
+      "dependencies": ["S2-C1: Core Package Dependencies"],
+      "passes": false
+    },
+    {
+      "category": "commit",
+      "name": "S2-C3: Navigation Actions",
+      "description": "Add navigation methods to deck atom",
+      "steps": [
+        "Add nextSlide action that increments currentSlide and pushes to history",
+        "Add prevSlide action that decrements currentSlide",
+        "Add goToSlide(index) action with bounds checking",
+        "Add goToFirstSlide and goToLastSlide convenience actions",
+        "Add canGoNext and canGoPrev computed selectors"
+      ],
+      "dependencies": ["S2-C2: Deck Atom State"],
+      "passes": false
+    },
   {
     "category": "commit",
     "name": "S2-C4: defineDeck Function",
@@ -110,37 +110,37 @@
     "dependencies": ["S2-C3: Navigation Actions"],
     "passes": false
   },
-  {
-    "category": "commit",
-    "name": "S2-C5: Keyboard Navigation Hook",
-    "description": "Create useKeyboardNavigation hook",
-    "steps": [
-      "Create src/hooks/useKeyboardNavigation.ts",
-      "Accept navigation config (mode, custom shortcuts)",
-      "Handle ArrowRight/Space/l keys for next",
-      "Handle ArrowLeft/h keys for prev",
-      "Handle Home/0 for first slide, End/$ for last",
-      "Add event listener on mount, cleanup on unmount"
-    ],
-    "dependencies": ["S2-C4: defineDeck Function"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S2-C6: Core Package Tests",
-    "description": "Add unit tests for store and navigation",
-    "steps": [
-      "Create src/store/deckStore.test.ts",
-      "Test initial state creation",
-      "Test nextSlide/prevSlide with boundary conditions",
-      "Test goToSlide with invalid indices",
-      "Create src/hooks/useKeyboardNavigation.test.ts",
-      "Test keyboard event handling",
-      "Run bun test and verify all pass"
-    ],
-    "dependencies": ["S2-C5: Keyboard Navigation Hook"],
-    "passes": false
-  },
+    {
+      "category": "commit",
+      "name": "S2-C5: Keyboard Navigation Hook",
+      "description": "Create useKeyboardNavigation hook",
+      "steps": [
+        "Create src/hooks/useKeyboardNavigation.ts",
+        "Accept navigation config (mode, custom shortcuts)",
+        "Handle ArrowRight/Space/l keys for next",
+        "Handle ArrowLeft/h keys for prev",
+        "Handle Home/0 for first slide, End/$ for last",
+        "Add event listener on mount, cleanup on unmount"
+      ],
+      "dependencies": ["S2-C4: defineDeck Function"],
+      "passes": false
+    },
+    {
+      "category": "commit",
+      "name": "S2-C6: Core Package Tests",
+      "description": "Add unit tests for atom and navigation",
+      "steps": [
+        "Create src/atoms/deck-atom.test.ts",
+        "Test initial state creation",
+        "Test nextSlide/prevSlide with boundary conditions",
+        "Test goToSlide with invalid indices",
+        "Create src/hooks/useKeyboardNavigation.test.ts",
+        "Test keyboard event handling",
+        "Run bun test and verify all pass"
+      ],
+      "dependencies": ["S2-C5: Keyboard Navigation Hook"],
+      "passes": false
+    },
   {
     "category": "commit",
     "name": "S3-C1: Theme Base Package Setup",
@@ -344,8 +344,8 @@
     "steps": [
       "Create src/components/DeckProvider.tsx",
       "Accept DeckConfig as prop",
-      "Initialize deck store with config",
-      "Provide store context to children",
+      "Initialize deck atom with config",
+      "Provide atom context to children",
       "Export from components/index.ts"
     ],
     "dependencies": ["S4-C2: Client Dependencies"],
@@ -358,7 +358,7 @@
     "steps": [
       "Create src/hooks/useDeck.ts",
       "Return currentSlide, totalSlides, navigation methods",
-      "Connect to deck store via DeckProvider context",
+      "Connect to deck atom via DeckProvider context",
       "Add TypeScript types for return value",
       "Export from hooks/index.ts"
     ],

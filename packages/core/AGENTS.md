@@ -1,6 +1,6 @@
 # @mnestia/core
 
-Zustand store and React hooks for slide deck state management.
+State management with @effect-atom/atom-react atoms and Effect services for slide deck state.
 
 ## Commands
 
@@ -17,48 +17,111 @@ bun run lint          # Lint
 
 ```
 src/
-  store/
-    deck-store.ts           # Main Zustand store
-    deck-store.test.ts      # Store tests
+  atoms/
+    deck-atom.ts            # Deck state atom with keepAlive
+    deck-atom.test.ts       # Atom tests
+    clicks-atom.ts          # Per-slide click counter atoms
+    clicks-atom.test.ts
+    slides-atom.ts          # Slides data atom
+    slides-atom.test.ts
+    theme-atom.ts           # Theme caching atom
+    theme-atom.test.ts
+  services/
+    deck-service.ts         # Effect service for deck operations
+    deck-service.test.ts
+    navigation-service.ts   # Navigation logic service
+    navigation-service.test.ts
+    theme-service.ts        # Theme loading service
+    theme-service.test.ts
   hooks/
+    use-deck.ts             # React hook for deck state
     use-keyboard-navigation.ts
     use-keyboard-navigation.test.ts
-  define-deck.ts            # Deck definition helper
-  define-deck.test.ts
+  utils/
+    define-deck.ts          # Deck configuration factory
+    define-deck.test.ts
+    define-theme.ts         # Theme definition helper
+    slide.ts                # Slide utilities
+  errors/
+    slide-errors.ts         # Slide-related errors
+    theme-errors.ts         # Theme-related errors
 index.ts                    # Public API exports
 ```
 
 ## Patterns
 
-### State Store
+### State Atoms
 
-Use Zustand with factory pattern:
+Use @effect-atom/atom-react with factory pattern and keepAlive:
 
 ```typescript
-export function createDeckStore(config: DeckConfig) {
-  return create<DeckState>((set, get) => ({
-    currentSlide: 0,
+// atoms/deck-atom.ts
+import { Atom } from "@effect-atom/atom-react";
 
-    nextSlide: () => {
-      const { currentSlide } = get();
-      set({ currentSlide: currentSlide + 1 });
-    },
-  }));
+export interface DeckState {
+  currentSlide: number;
+  totalSlides: number;
 }
+
+export function createDeckAtom(config: DeckConfig) {
+  return Atom.make({
+    currentSlide: 0,
+    totalSlides: config.slides.length,
+  }).pipe(Atom.keepAlive);
+}
+
+export type DeckAtom = ReturnType<typeof createDeckAtom>;
+```
+
+Use Atom.family for per-slide state:
+
+```typescript
+// atoms/clicks-atom.ts
+export const clicksAtomFamily = Atom.family((slideIndex: number) =>
+  Atom.make({ currentClick: 0, totalClicks: 0 })
+);
+```
+
+### Effect Services
+
+Services handle side effects and business logic:
+
+```typescript
+// services/deck-service.ts
+import { Effect } from "effect";
+
+export class DeckService extends Effect.Service<DeckService>()("DeckService", {
+  accessors: true,
+  effect: Effect.gen(function* () {
+    const nextSlide = Effect.fn("DeckService.nextSlide")(function* () {
+      // implementation with logging
+    });
+
+    return { nextSlide, /* ... */ };
+  }),
+}) {}
 ```
 
 ### React Hooks
 
-Prefix with `use`, co-locate with tests:
+Prefix with `use`, co-locate with tests. Connect atoms to React with useAtom:
 
 ```typescript
-// use-keyboard-navigation.ts
-export function useKeyboardNavigation(store: DeckStore) {
-  // implementation
-}
+// hooks/use-deck.ts
+import { useAtom } from "@effect-atom/atom-react";
 
-// use-keyboard-navigation.test.ts
-import { test, expect, describe } from "bun:test";
+export function useDeck(deckAtom: DeckAtom): UseDeckResult {
+  const [state, setState] = useAtom(deckAtom);
+  
+  const nextSlide = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      currentSlide: prev.currentSlide + 1
+    }));
+  }, [setState]);
+  
+  return { /* ... */ };
+}
 ```
 
 ### Testing
@@ -77,19 +140,37 @@ describe("feature", () => {
 
 | Category          | Convention | Example                 |
 | ----------------- | ---------- | ----------------------- |
-| Files             | kebab-case | `deck-store.ts`         |
+| Files             | kebab-case | `deck-atom.ts`          |
 | Hooks             | useXxx     | `useKeyboardNavigation` |
-| Factory functions | createXxx  | `createDeckStore`       |
+| Factory functions | createXxx  | `createDeckAtom`        |
+| Atom families     | xxxFamily  | `clicksAtomFamily`      |
+| Services          | XxxService | `DeckService`           |
 | Types             | PascalCase | `DeckConfig`            |
 
 ## Dependencies
 
-- `zustand` - State management
+- `@effect-atom/atom-react` - Atom-based state management
+- `effect` - Effect-TS core for services
 - `@mnestia/schema` - Type schemas
 - `react` - Peer dependency
-- `effect` - Effect-TS core
-- `@effect/platform` - Platform abstraction
-- `@effect/platform-bun` - Bun runtime support
+
+## Architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   React Hooks   │────▶│     Atoms       │────▶│    Services     │
+│  (useDeck)      │     │  (deck-atom)    │     │ (DeckService)   │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+       │                                               │
+       │                                               ▼
+       │                                        ┌─────────────────┐
+       └────────────────────────────────────────│  Effect Runtime │
+                                                └─────────────────┘
+```
+
+- **Atoms**: Immutable state containers with reactive updates
+- **Services**: Effect-based business logic and side effects
+- **Hooks**: React bindings connecting atoms to components
 
 <!-- effect-solutions:start -->
 ## Effect Best Practices
