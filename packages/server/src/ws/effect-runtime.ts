@@ -1,15 +1,20 @@
-import { Cause, Effect, Either, ManagedRuntime, Layer, Option } from "effect";
+import { Cause, Effect, Either, ManagedRuntime, Layer } from "effect";
 import type { WsOutgoingMessage } from "@mnestia/schema";
 import { SlideServiceLive, createSlideStoreLive } from "../domain/slide-layer";
 import type { SlideService } from "../domain/slide-service";
 import type { DeckStateInternal } from "../domain/slide-store";
 
 export function createSlideRuntime(
-  storeMap: Map<string, DeckStateInternal>
+  storeMap: Map<string, DeckStateInternal>,
+  tracingLayer: Layer.Layer<never>
 ): ManagedRuntime.ManagedRuntime<SlideService, never> {
   const storeLayer = createSlideStoreLive(storeMap);
   const serviceLayer = SlideServiceLive.pipe(Layer.provide(storeLayer));
-  return ManagedRuntime.make(serviceLayer);
+
+  // Merge tracing into the service layer so all Effect spans are exported
+  const fullLayer = Layer.merge(serviceLayer, tracingLayer);
+
+  return ManagedRuntime.make(fullLayer);
 }
 
 export function formatEffectCause<E>(cause: Cause.Cause<E>): string {

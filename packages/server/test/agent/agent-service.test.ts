@@ -1,4 +1,5 @@
 import { test, expect, describe, beforeEach } from "bun:test";
+import { Layer } from "effect";
 import type { ServerDeckState } from "@mnestia/schema";
 import { createServerTools, type BroadcastFn } from "../../src/agent/agent-service";
 import { createSlideRuntime } from "../../src/ws/effect-runtime";
@@ -14,7 +15,7 @@ interface BroadcastRecord {
 
 function createTestContext() {
   const storeMap = new Map<string, DeckStateInternal>();
-  const runtime = createSlideRuntime(storeMap);
+  const runtime = createSlideRuntime(storeMap, Layer.empty);
   const broadcasts: BroadcastRecord[] = [];
   const broadcast: BroadcastFn = (deckId, state) => {
     broadcasts.push({ deckId, state });
@@ -558,7 +559,7 @@ describe("createServerTools", () => {
 
     test("createServerTools returns exactly 5 tools", () => {
       const storeMap = new Map<string, DeckStateInternal>();
-      const runtime = createSlideRuntime(storeMap);
+      const runtime = createSlideRuntime(storeMap, Layer.empty);
       const tools = createServerTools(runtime, () => {});
 
       expect(tools).toHaveLength(5);
