@@ -21,5 +21,5 @@ export const loadSentryConfig = Effect.gen(function* () {
     Config.withDefault(false)
   );
 
-  return { dsn, environment, tracesSampleRate, consoleTrace } as SentryConfig;
+  return { dsn, environment, tracesSampleRate, consoleTrace } satisfies SentryConfig;
 });

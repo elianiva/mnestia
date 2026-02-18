@@ -1,11 +1,11 @@
 import { test, expect, describe } from "bun:test";
-import { Effect, Layer, Option } from "effect";
+import { Effect, Layer } from "effect";
 import {
   SimpleSpanProcessor,
   type SpanExporter,
   type ReadableSpan,
 } from "@opentelemetry/sdk-trace-base";
-import { NodeSdk } from "@effect/opentelemetry";
+import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
 import { SlideServiceLive, createSlideStoreLive } from "../../src/domain/slide-layer";
 import { SlideService } from "../../src/domain/slide-service";
 import type { DeckStateInternal } from "../../src/domain/slide-store";

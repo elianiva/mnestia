@@ -1,4 +1,4 @@
-import { NodeSdk } from "@effect/opentelemetry";
+import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
 import {
   BatchSpanProcessor,
   ConsoleSpanExporter,

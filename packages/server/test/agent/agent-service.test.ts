@@ -1,4 +1,4 @@
-import { test, expect, describe, beforeEach } from "bun:test";
+import { test, expect, describe } from "bun:test";
 import { Layer } from "effect";
 import type { ServerDeckState } from "@mnestia/schema";
 import { createServerTools, type BroadcastFn } from "../../src/agent/agent-service";
@@ -38,7 +38,7 @@ function createTestContext() {
 describe("createServerTools", () => {
   describe("add_slide tool", () => {
     test("adds a slide and returns success result", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
+      const { storeMap, tools } = createTestContext();
       seedDeck(storeMap, "deck-1", 1);
 
       const result = await tools.addSlide.execute!({
@@ -117,7 +117,7 @@ describe("createServerTools", () => {
 
   describe("remove_slide tool", () => {
     test("removes a slide and returns success result", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
+      const { storeMap, tools } = createTestContext();
       seedDeck(storeMap, "deck-1", 3);
 
       const result = await tools.removeSlide.execute!({
@@ -144,7 +144,7 @@ describe("createServerTools", () => {
     });
 
     test("adjusts currentSlide when removing the current slide", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
+      const { storeMap, tools } = createTestContext();
       seedDeck(storeMap, "deck-1", 3, 2);
 
       const result = await tools.removeSlide.execute!({
@@ -199,7 +199,7 @@ describe("createServerTools", () => {
 
   describe("update_slide tool", () => {
     test("updates slide content and returns success result", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
+      const { storeMap, tools } = createTestContext();
       seedDeck(storeMap, "deck-1", 2);
 
       const result = await tools.updateSlide.execute!({
@@ -280,7 +280,7 @@ describe("createServerTools", () => {
 
   describe("reorder_slides tool", () => {
     test("reorders slides and returns success result", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
+      const { storeMap, tools } = createTestContext();
       seedDeck(storeMap, "deck-1", 4);
 
       const result = await tools.reorderSlides.execute!({
@@ -309,7 +309,7 @@ describe("createServerTools", () => {
     });
 
     test("updates currentSlide when moving the active slide", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
+      const { storeMap, tools } = createTestContext();
       seedDeck(storeMap, "deck-1", 4, 1);
 
       const result = await tools.reorderSlides.execute!({

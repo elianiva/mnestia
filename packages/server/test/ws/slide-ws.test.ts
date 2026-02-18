@@ -1,6 +1,5 @@
 import { test, expect, describe, afterEach } from "bun:test";
-import { Elysia } from "elysia";
-import type { WsOutgoingMessage, WsIncomingMessage } from "@mnestia/schema";
+import type { WsOutgoingMessage } from "@mnestia/schema";
 import { slideWs } from "../../src/ws/slide-ws";
 import {
   seedDeck,

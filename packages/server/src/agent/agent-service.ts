@@ -45,6 +45,7 @@ async function runServiceEffect<A, E>(
 
   // Log the error instead of silently swallowing it
   const errorMessage = formatEffectCause(exit.cause);
+  // eslint-disable-next-line no-console
   console.error("[agent-service] Effect execution failed:", errorMessage);
   captureEffectError(exit.cause);
 

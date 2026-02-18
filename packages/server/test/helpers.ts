@@ -1,5 +1,5 @@
 import { expect } from "bun:test";
-import { Effect, Exit, Cause, Option, Layer, Redacted } from "effect";
+import { Effect, Exit, Cause, Option, Layer } from "effect";
 import { Elysia, type AnyElysia } from "elysia";
 import type { DeckStateInternal } from "../src/domain/slide-store";
 import type { AppConfig } from "../src/config/app-config";
