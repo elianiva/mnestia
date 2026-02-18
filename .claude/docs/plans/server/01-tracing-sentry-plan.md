@@ -718,5 +718,5 @@ Effect.gen (index.ts)
 | 5    | Wire into ManagedRuntime          | ✅ Done |
 | 6    | Manual spans on transport handlers | ✅ Done |
 | 7    | Error capture enhancement         | ✅ Done |
-| 8    | Testing                           | ⬜ Not started |
-| 9    | Documentation & cleanup           | ⬜ Not started |
+| 8    | Testing                           | ✅ Done |
+| 9    | Documentation & cleanup           | ✅ Done |
