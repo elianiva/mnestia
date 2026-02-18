@@ -66,10 +66,18 @@ export function broadcastToClients(
   excludeId?: string
 ): Effect.Effect<void> {
   const payload = JSON.stringify(msg);
+  const targetClients = [...clients.entries()].filter(
+    ([id]) => id !== excludeId
+  );
 
   return Effect.forEach(
-    [...clients.entries()].filter(([id]) => id !== excludeId),
+    targetClients,
     ([, client]) => sendToClient(client, payload),
     { discard: true }
+  ).pipe(
+    Effect.tap(() =>
+      Effect.annotateCurrentSpan("client.count", targetClients.length)
+    ),
+    Effect.withSpan("ws.broadcast")
   );
 }

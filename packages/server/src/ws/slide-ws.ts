@@ -10,6 +10,7 @@ import { SlideService } from "../domain/slide-service";
 import { WsMessageError } from "../domain/slide-errors";
 import { type DeckStateInternal } from "../domain/slide-store";
 import { formatEffectCause, broadcastToClients } from "./effect-runtime";
+import { captureEffectError } from "../config/sentry-capture";
 
 interface WsData {
   slideStore: Map<string, DeckStateInternal>;
@@ -122,12 +123,20 @@ export const slideWs = new Elysia({ name: "slide-ws" })
       const pipeline = Effect.gen(function* () {
         const parsed = yield* parseRawMessage(rawMessage);
         const message = yield* validateMessage(parsed);
+
+        // Annotate the current span with event metadata
+        yield* Effect.annotateCurrentSpan("ws.event_type", message.type);
+        if ("deckId" in message) {
+          yield* Effect.annotateCurrentSpan("deck.id", message.deckId);
+        }
+
         yield* handleMessage(wsSender, message, storeMap);
-      });
+      }).pipe(Effect.withSpan("ws.message"));
 
       const exit = await runtime.runPromiseExit(pipeline);
 
       if (Exit.isFailure(exit)) {
+        captureEffectError(exit.cause);
         sendError(wsSender, formatEffectCause(exit.cause));
       }
     },

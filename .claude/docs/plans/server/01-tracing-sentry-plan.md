@@ -716,7 +716,7 @@ Effect.gen (index.ts)
 | 3    | Sentry initialization             | ✅ Done |
 | 4    | OpenTelemetry tracing layer       | ✅ Done |
 | 5    | Wire into ManagedRuntime          | ✅ Done |
-| 6    | Manual spans on transport handlers | ⬜ Not started |
-| 7    | Error capture enhancement         | ⬜ Not started |
+| 6    | Manual spans on transport handlers | ✅ Done |
+| 7    | Error capture enhancement         | ✅ Done |
 | 8    | Testing                           | ⬜ Not started |
 | 9    | Documentation & cleanup           | ⬜ Not started |

@@ -2,6 +2,7 @@ import { Effect, Exit, ManagedRuntime } from "effect";
 import type { ServerDeckState } from "@mnestia/schema";
 import { SlideService } from "../domain/slide-service";
 import { formatEffectCause } from "../ws/effect-runtime";
+import { captureEffectError } from "../config/sentry-capture";
 import {
   addSlideDef,
   removeSlideDef,
@@ -45,6 +46,7 @@ async function runServiceEffect<A, E>(
   // Log the error instead of silently swallowing it
   const errorMessage = formatEffectCause(exit.cause);
   console.error("[agent-service] Effect execution failed:", errorMessage);
+  captureEffectError(exit.cause);
 
   return undefined;
 }
@@ -67,7 +69,11 @@ export function createServerTools(
           { content, layout, notes },
           position
         );
-      });
+      }).pipe(
+        Effect.tap(() => Effect.annotateCurrentSpan("tool.name", "add_slide")),
+        Effect.tap(() => Effect.annotateCurrentSpan("deck.id", deckId)),
+        Effect.withSpan("agent.tool.add_slide")
+      );
 
       const state = await runServiceEffect(effect, runtime);
       if (!state) return failureResult();
@@ -82,7 +88,12 @@ export function createServerTools(
       const effect = Effect.gen(function* () {
         const service = yield* SlideService;
         return yield* service.removeSlide(deckId, slideIndex);
-      });
+      }).pipe(
+        Effect.tap(() => Effect.annotateCurrentSpan("tool.name", "remove_slide")),
+        Effect.tap(() => Effect.annotateCurrentSpan("deck.id", deckId)),
+        Effect.tap(() => Effect.annotateCurrentSpan("slide.index", slideIndex)),
+        Effect.withSpan("agent.tool.remove_slide")
+      );
 
       const state = await runServiceEffect(effect, runtime);
       if (!state) return failureResult();
@@ -101,7 +112,12 @@ export function createServerTools(
           layout,
           notes,
         });
-      });
+      }).pipe(
+        Effect.tap(() => Effect.annotateCurrentSpan("tool.name", "update_slide")),
+        Effect.tap(() => Effect.annotateCurrentSpan("deck.id", deckId)),
+        Effect.tap(() => Effect.annotateCurrentSpan("slide.index", slideIndex)),
+        Effect.withSpan("agent.tool.update_slide")
+      );
 
       const state = await runServiceEffect(effect, runtime);
       if (!state) return failureResult();
@@ -116,7 +132,13 @@ export function createServerTools(
       const effect = Effect.gen(function* () {
         const service = yield* SlideService;
         return yield* service.reorderSlides(deckId, fromIndex, toIndex);
-      });
+      }).pipe(
+        Effect.tap(() => Effect.annotateCurrentSpan("tool.name", "reorder_slides")),
+        Effect.tap(() => Effect.annotateCurrentSpan("deck.id", deckId)),
+        Effect.tap(() => Effect.annotateCurrentSpan("slide.from_index", fromIndex)),
+        Effect.tap(() => Effect.annotateCurrentSpan("slide.to_index", toIndex)),
+        Effect.withSpan("agent.tool.reorder_slides")
+      );
 
       const state = await runServiceEffect(effect, runtime);
       if (!state) return failureResult();
@@ -131,7 +153,12 @@ export function createServerTools(
       const effect = Effect.gen(function* () {
         const service = yield* SlideService;
         return yield* service.changeCurrentSlide(deckId, slideIndex);
-      });
+      }).pipe(
+        Effect.tap(() => Effect.annotateCurrentSpan("tool.name", "change_current_slide")),
+        Effect.tap(() => Effect.annotateCurrentSpan("deck.id", deckId)),
+        Effect.tap(() => Effect.annotateCurrentSpan("slide.index", slideIndex)),
+        Effect.withSpan("agent.tool.change_current_slide")
+      );
 
       const state = await runServiceEffect(effect, runtime);
       if (!state) return failureResult();
