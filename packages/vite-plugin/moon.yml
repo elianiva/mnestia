@@ -1,0 +1,28 @@
+language: typescript
+stack: backend
+layer: library
+toolchains:
+  default: 'bun'
+
+dependsOn:
+  - id: 'core'
+    scope: 'build'
+  - id: 'schema'
+    scope: 'build'
+
+tasks:
+  build:
+    command: 'bun run build'
+    inputs:
+      - '@group(sources)'
+      - '@group(configs)'
+    outputs: []
+
+  install:
+    command: 'bun install'
+    inputs:
+      - 'package.json'
+    outputs:
+      - 'node_modules'
+    options:
+      cache: false

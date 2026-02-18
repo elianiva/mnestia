@@ -1,51 +1,64 @@
-import { useSyncExternalStore } from "react";
+import { useAtomValue, useAtomSet } from "@effect-atom/atom-react";
 import { useDeckContext } from "../components/deck-provider";
-import type { DeckState } from "@mnestia/core/store/deck-store";
+import type { DeckAtomValue } from "@mnestia/core/atoms/deck";
 
 export interface UseDeckReturn {
-  currentSlide: number;
-  totalSlides: number;
-  nextSlide: () => void;
-  prevSlide: () => void;
-  goToSlide: (index: number) => void;
-  goToFirstSlide: () => void;
-  goToLastSlide: () => void;
-  canGoNext: boolean;
-  canGoPrev: boolean;
-}
-
-interface StoreApi<T> {
-  getState: () => T;
-  subscribe: (listener: () => void) => () => void;
-}
-
-function useDeckStore<T>(store: StoreApi<DeckState>, selector: (state: DeckState) => T): T {
-  return useSyncExternalStore(
-    store.subscribe,
-    () => selector(store.getState()),
-    () => selector(store.getState()),
-  );
+	currentSlide: number;
+	totalSlides: number;
+	slides: DeckAtomValue["slides"];
+	nextSlide: () => void;
+	prevSlide: () => void;
+	goToSlide: (index: number) => void;
+	goToFirstSlide: () => void;
+	goToLastSlide: () => void;
+	canGoNext: boolean;
+	canGoPrev: boolean;
 }
 
 export function useDeck(): UseDeckReturn {
-  const { store } = useDeckContext();
+	const { store } = useDeckContext();
 
-  const currentSlide = useDeckStore(store, (state) => state.currentSlide);
-  const totalSlides = useDeckStore(store, (state) => state.totalSlides);
-  const canGoNext = useDeckStore(store, (state) => state.canGoNext());
-  const canGoPrev = useDeckStore(store, (state) => state.canGoPrev());
+	const state = useAtomValue(store);
+	const setState = useAtomSet(store);
 
-  const { nextSlide, prevSlide, goToSlide, goToFirstSlide, goToLastSlide } = store.getState();
+	const currentSlide = state.currentSlide;
+	const totalSlides = state.totalSlides;
+	const slides = state.slides;
 
-  return {
-    currentSlide,
-    totalSlides,
-    nextSlide,
-    prevSlide,
-    goToSlide,
-    goToFirstSlide,
-    goToLastSlide,
-    canGoNext,
-    canGoPrev,
-  };
+	const canGoNext = currentSlide < totalSlides - 1;
+	const canGoPrev = currentSlide > 0;
+
+	const nextSlide = () => {
+		if (canGoNext) {
+			setState((prev) => ({ ...prev, currentSlide: prev.currentSlide + 1 }));
+		}
+	};
+
+	const prevSlide = () => {
+		if (canGoPrev) {
+			setState((prev) => ({ ...prev, currentSlide: prev.currentSlide - 1 }));
+		}
+	};
+
+	const goToSlide = (index: number) => {
+		if (index >= 0 && index < totalSlides) {
+			setState((prev) => ({ ...prev, currentSlide: index }));
+		}
+	};
+
+	const goToFirstSlide = () => goToSlide(0);
+	const goToLastSlide = () => goToSlide(totalSlides - 1);
+
+	return {
+		currentSlide,
+		totalSlides,
+		slides,
+		nextSlide,
+		prevSlide,
+		goToSlide,
+		goToFirstSlide,
+		goToLastSlide,
+		canGoNext,
+		canGoPrev,
+	};
 }
