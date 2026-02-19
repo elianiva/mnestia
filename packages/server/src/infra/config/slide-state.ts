@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import type { Layer } from "effect";
-import type { DeckStateInternal } from "../domain/slide-store";
-import { createSlideRuntime } from "../ws/effect-runtime";
+import type { DeckStateInternal } from "@/domain/ports/slide-store";
+import { createSlideRuntime } from "@/infra/ws/effect-runtime";
 
 export function createSlideStatePlugin(tracingLayer: Layer.Layer<never>) {
   const storeMap = new Map<string, DeckStateInternal>();

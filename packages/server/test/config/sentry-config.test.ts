@@ -1,6 +1,6 @@
 import { test, expect, describe } from "bun:test";
 import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect";
-import { loadSentryConfig } from "../../src/config/sentry-config";
+import { loadSentryConfig } from "@/infra/config/sentry-config";
 
 function runWithEnv(env: Record<string, string>) {
   const provider = ConfigProvider.fromMap(new Map(Object.entries(env)));

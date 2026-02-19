@@ -1,6 +1,6 @@
 import { test, expect, describe, afterEach } from "bun:test";
 import { Option, Redacted } from "effect";
-import { agentController } from "../../src/agent/agent-controller";
+import { agentController } from "@/infra/http/agent-controller";
 import { seedDeck, createDecoratedApp, startApp } from "../helpers";
 
 // ── Test Helpers ──────────────────────────────────────────────────

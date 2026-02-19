@@ -1,11 +1,11 @@
 import { Elysia } from "elysia";
 import { Effect } from "effect";
-import { loadAppConfig } from "./config/app-config";
-import { initSentry } from "./config/sentry-init";
-import { createTracingLayer } from "./config/tracing-layer";
-import { createSlideStatePlugin } from "./state/slide-state";
-import { agentController } from "./agent/agent-controller";
-import { slideWs } from "./ws/slide-ws";
+import { loadAppConfig } from "@/infra/config/app-config";
+import { initSentry } from "@/infra/config/sentry-init";
+import { createTracingLayer } from "@/infra/config/tracing-layer";
+import { createSlideStatePlugin } from "@/infra/config/slide-state";
+import { agentController } from "@/infra/http/agent-controller";
+import { slideWs } from "@/infra/ws/slide-ws";
 
 // Single Effect pipeline — all config via Effect Config
 const { config, tracingLayer } = await Effect.runPromise(

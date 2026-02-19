@@ -1,7 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import { Effect, Layer, Option } from "effect";
-import { createTracingLayer } from "../../src/config/tracing-layer";
-import type { SentryConfig } from "../../src/config/sentry-config";
+import { createTracingLayer } from "@/infra/config/tracing-layer";
+import type { SentryConfig } from "@/infra/config/sentry-config";
 
 function makeConfig(overrides: Partial<SentryConfig> = {}): SentryConfig {
   return {

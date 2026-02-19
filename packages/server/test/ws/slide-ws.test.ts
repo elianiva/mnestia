@@ -1,6 +1,6 @@
 import { test, expect, describe, afterEach } from "bun:test";
 import type { WsOutgoingMessage } from "@mnestia/schema";
-import { slideWs } from "../../src/ws/slide-ws";
+import { slideWs } from "@/infra/ws/slide-ws";
 import {
   seedDeck,
   createDecoratedApp,

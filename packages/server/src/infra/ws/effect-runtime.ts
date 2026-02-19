@@ -1,8 +1,10 @@
 import { Cause, Effect, Either, ManagedRuntime, Layer } from "effect";
 import type { WsOutgoingMessage } from "@mnestia/schema";
-import { SlideServiceLive, createSlideStoreLive } from "../domain/slide-layer";
-import type { SlideService } from "../domain/slide-service";
-import type { DeckStateInternal } from "../domain/slide-store";
+import { SlideServiceLive } from "@/domain/adapters/slide-service-live";
+import { createSlideStoreLive } from "@/domain/adapters/slide-store-live";
+import type { SlideService } from "@/domain/ports/slide-service";
+import type { DeckStateInternal } from "@/domain/ports/slide-store";
+import { mapDomainErrorToMessage } from "@/shared/errors";
 
 export function createSlideRuntime(
   storeMap: Map<string, DeckStateInternal>,
@@ -21,32 +23,9 @@ export function formatEffectCause<E>(cause: Cause.Cause<E>): string {
   const either = Cause.failureOrCause(cause);
 
   return Either.match(either, {
-    onLeft: (error) => formatDomainError(error),
+    onLeft: (error) => mapDomainErrorToMessage(error),
     onRight: (defectCause) => Cause.pretty(defectCause),
   });
-}
-
-function formatDomainError(error: unknown): string {
-  if (typeof error !== "object" || error === null || !("_tag" in error)) {
-    return String(error);
-  }
-
-  const tagged = error as { _tag: string; [key: string]: unknown };
-
-  switch (tagged._tag) {
-    case "DeckNotFoundError":
-      return `Deck not found: ${String(tagged.deckId)}`;
-    case "SlideNotFoundError":
-      return `Slide not found at index ${String(tagged.slideIndex)} in deck ${String(tagged.deckId)}`;
-    case "InvalidSlideIndexError":
-      return `Invalid slide index ${String(tagged.slideIndex)} (total: ${String(tagged.totalSlides)}) in deck ${String(tagged.deckId)}`;
-    case "SlideOperationError":
-      return `Slide operation failed: ${String(tagged.reason)}`;
-    case "WsMessageError":
-      return String(tagged.message);
-    default:
-      return `Error [${tagged._tag}]`;
-  }
 }
 
 // ── WebSocket Effect Helpers ──────────────────────────────────────

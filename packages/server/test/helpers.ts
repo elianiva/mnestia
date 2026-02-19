@@ -1,11 +1,13 @@
 import { expect } from "bun:test";
 import { Effect, Exit, Cause, Option, Layer } from "effect";
 import { Elysia, type AnyElysia } from "elysia";
-import type { DeckStateInternal } from "../src/domain/slide-store";
-import type { AppConfig } from "../src/config/app-config";
-import type { SentryConfig } from "../src/config/sentry-config";
-import { SlideService } from "../src/domain/slide-service";
-import { createSlideRuntime } from "../src/ws/effect-runtime";
+import type { DeckStateInternal } from "@/domain/ports/slide-store";
+import type { AppConfig } from "@/infra/config/app-config";
+import type { SentryConfig } from "@/infra/config/sentry-config";
+import { DEFAULT_AI_MODEL } from "@/infra/config/app-config";
+import { SlideService } from "@/domain/ports/slide-service";
+import { createSlideRuntime } from "@/infra/ws/effect-runtime";
+
 
 const DEFAULT_SENTRY_CONFIG: SentryConfig = {
   dsn: Option.none(),
@@ -45,6 +47,7 @@ export function createTestConfig(
     port: 0,
     host: "localhost",
     openaiApiKey: Option.none(),
+    aiModel: DEFAULT_AI_MODEL,
     sentry: DEFAULT_SENTRY_CONFIG,
     ...overrides,
   };

@@ -6,9 +6,10 @@ import {
   type ReadableSpan,
 } from "@opentelemetry/sdk-trace-base";
 import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
-import { SlideServiceLive, createSlideStoreLive } from "../../src/domain/slide-layer";
-import { SlideService } from "../../src/domain/slide-service";
-import type { DeckStateInternal } from "../../src/domain/slide-store";
+import { SlideServiceLive } from "@/domain/adapters/slide-service-live";
+import { createSlideStoreLive } from "@/domain/adapters/slide-store-live";
+import { SlideService } from "@/domain/ports/slide-service";
+import type { DeckStateInternal } from "@/domain/ports/slide-store";
 
 // Custom exporter that preserves spans even after shutdown
 // (InMemorySpanExporter clears spans on shutdown, which the

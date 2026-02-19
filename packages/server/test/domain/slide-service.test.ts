@@ -1,9 +1,10 @@
 import { test, expect, describe } from "bun:test";
 import { Layer } from "effect";
 import type { ServerDeckState } from "@mnestia/schema";
-import { SlideService } from "../../src/domain/slide-service";
-import { type DeckStateInternal } from "../../src/domain/slide-store";
-import { SlideServiceLive, createSlideStoreLive } from "../../src/domain/slide-layer";
+import { SlideService } from "@/domain/ports/slide-service";
+import { type DeckStateInternal } from "@/domain/ports/slide-store";
+import { SlideServiceLive } from "@/domain/adapters/slide-service-live";
+import { createSlideStoreLive } from "@/domain/adapters/slide-store-live";
 import {
   seedDeck,
   expectSuccess,

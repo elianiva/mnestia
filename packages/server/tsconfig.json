@@ -8,6 +8,10 @@
     "declarationMap": true,
     "lib": ["ESNext"],
     "types": ["bun-types"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "plugins": [
       {
         "name": "@effect/language-service"

@@ -5,7 +5,7 @@ import type {
   InvalidSlideIndexError,
   SlideNotFoundError,
   SlideOperationError,
-} from "./slide-errors";
+} from "@/domain/slide-errors";
 
 export class SlideService extends Context.Tag("@mnestia/SlideService")<
   SlideService,

@@ -1,9 +1,10 @@
 import { test, expect, describe } from "bun:test";
 import { Layer } from "effect";
 import type { ServerDeckState } from "@mnestia/schema";
-import { createServerTools, type BroadcastFn } from "../../src/agent/agent-service";
-import { createSlideRuntime } from "../../src/ws/effect-runtime";
-import type { DeckStateInternal } from "../../src/domain/slide-store";
+import { createAgentTools } from "@/application/agent-tool-factory";
+import type { BroadcastFn } from "@/application/agent-tool-executor";
+import { createSlideRuntime } from "@/infra/ws/effect-runtime";
+import type { DeckStateInternal } from "@/domain/ports/slide-store";
 import { seedDeck } from "../helpers";
 
 // ── Test Helpers ──────────────────────────────────────────────────
@@ -20,7 +21,7 @@ function createTestContext() {
   const broadcast: BroadcastFn = (deckId, state) => {
     broadcasts.push({ deckId, state });
   };
-  const tools = createServerTools(runtime, broadcast);
+  const tools = createAgentTools(runtime, broadcast);
 
   // Tools are returned in order: [addSlide, removeSlide, updateSlide, reorderSlides, changeCurrentSlide]
   const [addSlide, removeSlide, updateSlide, reorderSlides, changeCurrentSlide] = tools;
@@ -557,10 +558,10 @@ describe("createServerTools", () => {
       expect((tools.changeCurrentSlide as any).__toolSide).toBe("server");
     });
 
-    test("createServerTools returns exactly 5 tools", () => {
+    test("createAgentTools returns exactly 5 tools", () => {
       const storeMap = new Map<string, DeckStateInternal>();
       const runtime = createSlideRuntime(storeMap, Layer.empty);
-      const tools = createServerTools(runtime, () => {});
+      const tools = createAgentTools(runtime, () => {});
 
       expect(tools).toHaveLength(5);
     });
