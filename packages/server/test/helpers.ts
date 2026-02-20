@@ -1,10 +1,18 @@
 import { expect } from "bun:test";
-import { Effect, Exit, Cause, Option, Layer, Redacted } from "effect";
+import { Effect, Exit, Cause, Option, Layer, Context } from "effect";
 import { Elysia, type AnyElysia } from "elysia";
 import type { DeckStateInternal } from "../src/domain/slide-store";
 import type { AppConfig } from "../src/config/app-config";
+import type { SentryConfig } from "../src/config/sentry-config";
 import { SlideService } from "../src/domain/slide-service";
 import { createSlideRuntime } from "../src/ws/effect-runtime";
+
+const DEFAULT_SENTRY_CONFIG: SentryConfig = {
+  dsn: Option.none(),
+  environment: "test",
+  tracesSampleRate: 1.0,
+  consoleTrace: false,
+};
 
 // ── Seed Helpers ──────────────────────────────────────────────────
 
@@ -36,14 +44,16 @@ export function createTestConfig(
   return {
     port: 0,
     host: "localhost",
-    openaiApiKey: Option.none(),
+    piProvider: Option.none(),
+    piModel: Option.none(),
+    sentry: DEFAULT_SENTRY_CONFIG,
     ...overrides,
   };
 }
 
 export function createDecoratedApp(configOverrides: Partial<AppConfig> = {}) {
   const storeMap = new Map<string, DeckStateInternal>();
-  const runtime = createSlideRuntime(storeMap);
+  const runtime = createSlideRuntime(storeMap, Layer.empty);
   const appConfig = createTestConfig(configOverrides);
   const app = new Elysia()
     .decorate("appConfig", appConfig)
@@ -168,7 +178,7 @@ export function expectFailure<E>(exit: Exit.Exit<unknown, E>): void {
  * ```
  */
 export function runWithService<A, E>(
-  fn: (service: SlideService["Type"]) => Effect.Effect<A, E, never>,
+  fn: (service: Context.Tag.Service<typeof SlideService>) => Effect.Effect<A, E, never>,
   layer: Layer.Layer<SlideService>
 ): Promise<Exit.Exit<A, E>> {
   return Effect.runPromiseExit(

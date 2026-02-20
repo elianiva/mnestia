@@ -2,7 +2,7 @@
 
 Backend realtime slide system built with **Elysia (REST + WebSocket)** inside a **Moon-managed monorepo**, integrating:
 
-- TanStack AI (agent layer)
+- Pi RPC (AI agent layer via subprocess)
 - Effect (functional core / domain logic discipline)
 
 Deck management via REST is intentionally skipped for now.
@@ -16,7 +16,7 @@ Active:
 
 - WebSocket realtime slide synchronization
 - Shared in-memory state using Elysia `.state()`
-- AI Agent integration (TanStack AI)
+- AI Agent integration (Pi RPC subprocess)
 - Effect-based domain architecture
 - SPA-compatible architecture
 
@@ -59,16 +59,16 @@ Moon handles:
 
 # 3. External Architectural References
 
-## TanStack AI
+## Pi RPC
 
-https://tanstack.com/ai/latest/docs/getting-started/overview
+Pi is used as an AI coding agent via its RPC mode (`pi --mode rpc --no-session`).
+Communication: JSON lines over stdin/stdout of a spawned child process.
 
 Used for:
 
 - Agent-based chat interaction
-- Tool-driven AI architecture
-- Structured AI outputs
-- Streaming-compatible design
+- Structured AI outputs (SlideCommand JSON)
+- Streaming text deltas back to client via SSE
 
 ---
 
@@ -121,15 +121,17 @@ Broadcast to Clients
 
 ## B. AI Agent Slide Manipulation
 
-Chat UI (TanStack AI)
+Chat UI
     ↓
-POST /agent
+POST /agent/chat
     ↓
 Agent Controller
     ↓
-AI Processing Layer
+Pi RPC subprocess (pi --mode rpc --no-session)
     ↓
-Structured Slide Command
+Structured SlideCommand JSON (```json fenced blocks)
+    ↓
+parseSlideCommands → executeSlideCommands
     ↓
 Slide Service (Effect)
     ↓
@@ -220,35 +222,35 @@ WebSocket must NOT:
 
 ---
 
-# 7. AI Agent Integration (TanStack AI)
+# 7. AI Agent Integration (Pi RPC)
 
-Reference:
+The AI agent runs as a Pi subprocess in RPC mode.
+`PiRpcClient` manages the child process lifecycle (spawn, stdin/stdout JSON lines, kill).
 
-https://tanstack.com/ai/latest/docs/getting-started/overview
+Architecture:
 
-Purpose:
+- `pi-rpc-client.ts` — spawns `pi --mode rpc --no-session`, sends/receives JSON lines
+- `agent-service.ts` — parses SlideCommand JSON from agent text, executes via SlideService
+- `agent-controller.ts` — POST /agent/chat endpoint, streams text deltas as SSE, extracts commands on agent_end
 
-- Modify slides via natural language
-- Convert chat into structured slide commands
-- Support tool-driven AI mutation
+Config: `PI_PROVIDER` and `PI_MODEL` env vars (optional, uses pi defaults).
 
-Slides structure can remain minimal placeholder.
-
-Agent must output structured command format defined in `../schema`.
+Agent must output structured command format defined in `../schema` as ```json fenced blocks.
 
 ---
 
 # 8. Agent Flow Specification
 
-1. Client sends chat message
-2. `/agent` endpoint receives request
-3. Agent layer invokes AI model
-4. AI produces structured slide command
-5. Validate against shared schema
-6. Execute Slide Service Effect
-7. Update state
-8. Broadcast via WebSocket
-9. Return structured result
+1. Client sends chat message to POST /agent/chat
+2. Agent controller builds system prompt with SLIDE_TOOL_DESCRIPTIONS + deck context
+3. Pi RPC subprocess receives prompt
+4. Pi streams text_delta events → SSE to client
+5. On agent_end: extract ```json blocks from full response text
+6. Validate each against SlideCommandSchema (valibot)
+7. Execute via SlideService (Effect)
+8. Update state
+9. Broadcast via WebSocket
+10. Send SSE command execution results + done event
 
 Agent must not:
 
@@ -291,17 +293,26 @@ Follow:
 ```
 src/
   index.ts
+  config/
+    app-config.ts
+    sentry-config.ts
+    sentry-init.ts
+    sentry-capture.ts
+    tracing-layer.ts
   ws/
     slide-ws.ts
+    effect-runtime.ts
   state/
     slide-state.ts
   domain/
     slide-service.ts
+    slide-store.ts
     slide-errors.ts
     slide-layer.ts
   agent/
     agent-controller.ts
     agent-service.ts
+    pi-rpc-client.ts
 ```
 
 Shared contracts:
@@ -314,13 +325,15 @@ Shared contracts:
 
 # 11. Registration Order
 
-1. Register `.state()`
-2. Provide Effect Layers
-3. Register agent routes
-4. Register WebSocket handler
-5. Start server
+1. Load `AppConfig` via Effect Config (includes `SentryConfig`)
+2. Initialize Sentry via `initSentry(config.sentry)` (pure Effect, no `process.env`)
+3. Create tracing layer via `createTracingLayer(config.sentry, sentryEnabled)`
+4. Register `.decorate()` with `createSlideStatePlugin(tracingLayer)`
+5. Register agent routes
+6. Register WebSocket handler
+7. Start server
 
-Effect layers must be initialized before transport handlers.
+Effect layers and tracing must be initialized before transport handlers.
 
 ---
 
@@ -349,7 +362,60 @@ Agent modules: `agent-*`
 
 ---
 
-# 14. Future Extensions
+# 14. Observability (Effect → OpenTelemetry → Sentry)
+
+Tracing pipeline: Effect auto-spans (`Effect.fn`) and manual spans (`Effect.withSpan`)
+flow through `@effect/opentelemetry` (NodeSdk bridge) to OpenTelemetry span processors
+(SentrySpanProcessor for production, ConsoleSpanExporter for local dev).
+
+## Config Modules
+
+| Module | Purpose |
+|--------|---------|
+| `sentry-config.ts` | `SentryConfig` interface + `loadSentryConfig` via Effect `Config` |
+| `sentry-init.ts` | `initSentry(config)` — pure Effect, calls `Sentry.init()` when DSN present |
+| `tracing-layer.ts` | `createTracingLayer(config, sentryEnabled)` — returns `NodeSdk.layer` or `NodeSdk.layerEmpty` |
+| `sentry-capture.ts` | `captureEffectError(cause)` — sends typed Effect errors to Sentry |
+
+## Span Naming Convention
+
+| Span | Source | Description |
+|------|--------|-------------|
+| `ws.message` | `slide-ws.ts` | WebSocket message handling |
+| `ws.broadcast` | `effect-runtime.ts` | WebSocket broadcast to clients |
+| `agent.chat` | `agent-controller.ts` | AI chat request (Sentry native span) |
+| `agent.tool.<name>` | `agent-service.ts` | AI tool execution |
+| `SlideService.*` | `slide-layer.ts` | Auto-generated by `Effect.fn` |
+
+## Span Annotations
+
+| Attribute | Used In | Description |
+|-----------|---------|-------------|
+| `ws.event_type` | `ws.message` | Message type (JOIN_ROOM, SLIDE_CHANGE, etc.) |
+| `deck.id` | `ws.message`, `agent.chat`, `agent.tool.*` | Deck identifier |
+| `client.count` | `ws.broadcast` | Number of clients receiving broadcast |
+| `ai.model` | `agent.chat` | AI model name |
+| `tool.name` | `agent.tool.*` | Tool name |
+| `slide.index` | `agent.tool.*` | Target slide index |
+
+## Error Capture
+
+Typed Effect errors are captured to Sentry via `captureEffectError(cause)`:
+- Tagged errors (`_tag` field) → Sentry exception with `effect.error_tag` tag + full context as extras
+- Defects → Sentry exception with `effect.error_type: "defect"` tag
+- Called automatically from WS handler (`slide-ws.ts`) and agent service (`agent-service.ts`) on failure
+
+## Key Design Rules
+
+- **No `process.env`** — all config via Effect `Config` (loaded in startup pipeline)
+- **`initSentry` is a pure Effect** — receives `SentryConfig`, not env vars
+- **`createTracingLayer` is a pure function** — receives config + boolean, returns Layer
+- **`skipOpenTelemetrySetup: true`** in Sentry init — Effect manages its own OTEL via `@effect/opentelemetry`
+- **Tracing layer passed explicitly** — injected into `ManagedRuntime` via `createSlideStatePlugin(tracingLayer)`
+
+---
+
+# 15. Future Extensions
 
 Later:
 
@@ -362,7 +428,7 @@ Later:
 
 ---
 
-# 15. Default Server
+# 16. Default Server
 
 http://localhost:3000
 

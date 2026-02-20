@@ -1,6 +1,11 @@
-import { test, expect, describe, beforeEach } from "bun:test";
+import { test, expect, describe } from "bun:test";
+import { Layer } from "effect";
 import type { ServerDeckState } from "@mnestia/schema";
-import { createServerTools, type BroadcastFn } from "../../src/agent/agent-service";
+import {
+  parseSlideCommands,
+  executeSlideCommands,
+  type BroadcastFn,
+} from "../../src/agent/agent-service";
 import { createSlideRuntime } from "../../src/ws/effect-runtime";
 import type { DeckStateInternal } from "../../src/domain/slide-store";
 import { seedDeck } from "../helpers";
@@ -14,554 +19,272 @@ interface BroadcastRecord {
 
 function createTestContext() {
   const storeMap = new Map<string, DeckStateInternal>();
-  const runtime = createSlideRuntime(storeMap);
+  const runtime = createSlideRuntime(storeMap, Layer.empty);
   const broadcasts: BroadcastRecord[] = [];
   const broadcast: BroadcastFn = (deckId, state) => {
     broadcasts.push({ deckId, state });
   };
-  const tools = createServerTools(runtime, broadcast);
 
-  // Tools are returned in order: [addSlide, removeSlide, updateSlide, reorderSlides, changeCurrentSlide]
-  const [addSlide, removeSlide, updateSlide, reorderSlides, changeCurrentSlide] = tools;
-
-  return {
-    storeMap,
-    runtime,
-    broadcasts,
-    tools: { addSlide, removeSlide, updateSlide, reorderSlides, changeCurrentSlide },
-  };
+  return { storeMap, runtime, broadcasts, broadcast };
 }
 
-// ── add_slide tool ────────────────────────────────────────────────
+// ── parseSlideCommands ────────────────────────────────────────────
 
-describe("createServerTools", () => {
-  describe("add_slide tool", () => {
-    test("adds a slide and returns success result", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 1);
+describe("parseSlideCommands", () => {
+  test("extracts ADD_SLIDE command from json fenced block", () => {
+    const text = `Here's a new slide:
 
-      const result = await tools.addSlide.execute!({
-        deckId: "deck-1",
-        content: "New slide content",
-        layout: "title",
-      });
+\`\`\`json
+{"type":"ADD_SLIDE","deckId":"deck-1","slide":{"content":"Hello"}}
+\`\`\`
 
-      expect(result.success).toBe(true);
-      expect(result.slideCount).toBe(2);
-      expect(result.currentSlide).toBe(0);
-    });
+Done!`;
 
-    test("broadcasts state after adding a slide", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 0);
-
-      await tools.addSlide.execute!({
-        deckId: "deck-1",
-        content: "Broadcast test",
-      });
-
-      expect(broadcasts).toHaveLength(1);
-      expect(broadcasts[0]!.deckId).toBe("deck-1");
-      expect(broadcasts[0]!.state.slides).toHaveLength(1);
-      expect(broadcasts[0]!.state.slides[0]!.content).toBe("Broadcast test");
-    });
-
-    test("adds a slide at specific position", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 3);
-
-      const result = await tools.addSlide.execute!({
-        deckId: "deck-1",
-        content: "Inserted",
-        position: 1,
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.slideCount).toBe(4);
-
-      // Verify via broadcast that the slide is at the right position
-      expect(broadcasts[0]!.state.slides[1]!.content).toBe("Inserted");
-    });
-
-    test("adds a slide with notes", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 0);
-
-      await tools.addSlide.execute!({
-        deckId: "deck-1",
-        content: "With notes",
-        notes: "Speaker notes here",
-      });
-
-      expect(broadcasts[0]!.state.slides[0]!.notes).toBe("Speaker notes here");
-    });
-
-    test("returns failure result for nonexistent deck", async () => {
-      const { broadcasts, tools } = createTestContext();
-
-      const result = await tools.addSlide.execute!({
-        deckId: "nonexistent",
-        content: "X",
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.slideCount).toBe(0);
-      expect(result.currentSlide).toBe(0);
-      // Should NOT broadcast on failure
-      expect(broadcasts).toHaveLength(0);
-    });
+    const commands = parseSlideCommands(text);
+    expect(commands).toHaveLength(1);
+    expect(commands[0]!.type).toBe("ADD_SLIDE");
   });
 
-  // ── remove_slide tool ─────────────────────────────────────────
+  test("extracts multiple commands from multiple json blocks", () => {
+    const text = `I'll add two slides:
 
-  describe("remove_slide tool", () => {
-    test("removes a slide and returns success result", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 3);
+\`\`\`json
+{"type":"ADD_SLIDE","deckId":"deck-1","slide":{"content":"Slide A"}}
+\`\`\`
 
-      const result = await tools.removeSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 1,
-      });
+\`\`\`json
+{"type":"ADD_SLIDE","deckId":"deck-1","slide":{"content":"Slide B"}}
+\`\`\``;
 
-      expect(result.success).toBe(true);
-      expect(result.slideCount).toBe(2);
-    });
-
-    test("broadcasts state after removing a slide", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 3);
-
-      await tools.removeSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 0,
-      });
-
-      expect(broadcasts).toHaveLength(1);
-      expect(broadcasts[0]!.deckId).toBe("deck-1");
-      expect(broadcasts[0]!.state.slides).toHaveLength(2);
-    });
-
-    test("adjusts currentSlide when removing the current slide", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 3, 2);
-
-      const result = await tools.removeSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 2,
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.currentSlide).toBeLessThanOrEqual(1);
-    });
-
-    test("returns failure result for invalid slide index", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 2);
-
-      const result = await tools.removeSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 99,
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
-
-    test("returns failure result for negative slide index", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 2);
-
-      const result = await tools.removeSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: -1,
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
-
-    test("returns failure result for nonexistent deck", async () => {
-      const { broadcasts, tools } = createTestContext();
-
-      const result = await tools.removeSlide.execute!({
-        deckId: "nonexistent",
-        slideIndex: 0,
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
+    const commands = parseSlideCommands(text);
+    expect(commands).toHaveLength(2);
   });
 
-  // ── update_slide tool ─────────────────────────────────────────
+  test("extracts UPDATE_SLIDE command", () => {
+    const text = `\`\`\`json
+{"type":"UPDATE_SLIDE","deckId":"d","slideIndex":0,"content":"New"}
+\`\`\``;
 
-  describe("update_slide tool", () => {
-    test("updates slide content and returns success result", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 2);
-
-      const result = await tools.updateSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 0,
-        content: "Updated content",
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.slideCount).toBe(2);
-    });
-
-    test("broadcasts state after updating a slide", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 2);
-
-      await tools.updateSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 0,
-        content: "Updated",
-        layout: "two-column",
-        notes: "New notes",
-      });
-
-      expect(broadcasts).toHaveLength(1);
-      const slide = broadcasts[0]!.state.slides[0]!;
-      expect(slide.content).toBe("Updated");
-      expect(slide.layout).toBe("two-column");
-      expect(slide.notes).toBe("New notes");
-    });
-
-    test("preserves unchanged fields", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 2);
-
-      await tools.updateSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 0,
-        notes: "Only notes changed",
-      });
-
-      expect(broadcasts).toHaveLength(1);
-      const slide = broadcasts[0]!.state.slides[0]!;
-      expect(slide.content).toBe("Content for slide 0");
-      expect(slide.layout).toBe("default");
-      expect(slide.notes).toBe("Only notes changed");
-    });
-
-    test("returns failure result for out-of-bounds index", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 2);
-
-      const result = await tools.updateSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 10,
-        content: "X",
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
-
-    test("returns failure result for nonexistent deck", async () => {
-      const { broadcasts, tools } = createTestContext();
-
-      const result = await tools.updateSlide.execute!({
-        deckId: "ghost",
-        slideIndex: 0,
-        content: "X",
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
+    const commands = parseSlideCommands(text);
+    expect(commands).toHaveLength(1);
+    expect(commands[0]!.type).toBe("UPDATE_SLIDE");
   });
 
-  // ── reorder_slides tool ───────────────────────────────────────
+  test("extracts REMOVE_SLIDE command", () => {
+    const text = `\`\`\`json
+{"type":"REMOVE_SLIDE","deckId":"d","slideIndex":1}
+\`\`\``;
 
-  describe("reorder_slides tool", () => {
-    test("reorders slides and returns success result", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 4);
-
-      const result = await tools.reorderSlides.execute!({
-        deckId: "deck-1",
-        fromIndex: 0,
-        toIndex: 3,
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.slideCount).toBe(4);
-    });
-
-    test("broadcasts state after reordering", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 4);
-
-      await tools.reorderSlides.execute!({
-        deckId: "deck-1",
-        fromIndex: 0,
-        toIndex: 2,
-      });
-
-      expect(broadcasts).toHaveLength(1);
-      // Original slide-0 should now be at index 2
-      expect(broadcasts[0]!.state.slides[2]!.id).toBe("slide-0");
-    });
-
-    test("updates currentSlide when moving the active slide", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 4, 1);
-
-      const result = await tools.reorderSlides.execute!({
-        deckId: "deck-1",
-        fromIndex: 1,
-        toIndex: 3,
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.currentSlide).toBe(3);
-    });
-
-    test("returns failure result for invalid fromIndex", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 3);
-
-      const result = await tools.reorderSlides.execute!({
-        deckId: "deck-1",
-        fromIndex: -1,
-        toIndex: 1,
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
-
-    test("returns failure result for invalid toIndex", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 3);
-
-      const result = await tools.reorderSlides.execute!({
-        deckId: "deck-1",
-        fromIndex: 0,
-        toIndex: 99,
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
-
-    test("returns failure result for nonexistent deck", async () => {
-      const { broadcasts, tools } = createTestContext();
-
-      const result = await tools.reorderSlides.execute!({
-        deckId: "nonexistent",
-        fromIndex: 0,
-        toIndex: 1,
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
+    const commands = parseSlideCommands(text);
+    expect(commands).toHaveLength(1);
+    expect(commands[0]!.type).toBe("REMOVE_SLIDE");
   });
 
-  // ── change_current_slide tool ─────────────────────────────────
+  test("extracts REORDER_SLIDES command", () => {
+    const text = `\`\`\`json
+{"type":"REORDER_SLIDES","deckId":"d","fromIndex":0,"toIndex":2}
+\`\`\``;
 
-  describe("change_current_slide tool", () => {
-    test("changes current slide and returns success result", async () => {
-      const { storeMap, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 5);
-
-      const result = await tools.changeCurrentSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 3,
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.slideCount).toBe(5);
-      expect(result.currentSlide).toBe(3);
-    });
-
-    test("broadcasts state after changing current slide", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 5);
-
-      await tools.changeCurrentSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 4,
-      });
-
-      expect(broadcasts).toHaveLength(1);
-      expect(broadcasts[0]!.deckId).toBe("deck-1");
-      expect(broadcasts[0]!.state.currentSlide).toBe(4);
-    });
-
-    test("returns failure result for out-of-bounds index", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 3);
-
-      const result = await tools.changeCurrentSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 99,
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
-
-    test("returns failure result for negative index", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 3);
-
-      const result = await tools.changeCurrentSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: -1,
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
-
-    test("returns failure result for nonexistent deck", async () => {
-      const { broadcasts, tools } = createTestContext();
-
-      const result = await tools.changeCurrentSlide.execute!({
-        deckId: "nonexistent",
-        slideIndex: 0,
-      });
-
-      expect(result.success).toBe(false);
-      expect(broadcasts).toHaveLength(0);
-    });
+    const commands = parseSlideCommands(text);
+    expect(commands).toHaveLength(1);
+    expect(commands[0]!.type).toBe("REORDER_SLIDES");
   });
 
-  // ── Cross-tool integration ────────────────────────────────────
+  test("extracts CHANGE_CURRENT_SLIDE command", () => {
+    const text = `\`\`\`json
+{"type":"CHANGE_CURRENT_SLIDE","deckId":"d","slideIndex":3}
+\`\`\``;
 
-  describe("cross-tool integration", () => {
-    test("multiple tool calls compose correctly on the same deck", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 0);
-
-      // Add 3 slides
-      await tools.addSlide.execute!({ deckId: "deck-1", content: "Slide A" });
-      await tools.addSlide.execute!({ deckId: "deck-1", content: "Slide B" });
-      await tools.addSlide.execute!({ deckId: "deck-1", content: "Slide C" });
-
-      // Update the second
-      await tools.updateSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 1,
-        content: "Updated B",
-      });
-
-      // Navigate to last
-      await tools.changeCurrentSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 2,
-      });
-
-      // Remove first
-      const result = await tools.removeSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 0,
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.slideCount).toBe(2);
-      // All operations should have broadcast
-      expect(broadcasts).toHaveLength(6);
-
-      // Check final state from last broadcast
-      const finalState = broadcasts[broadcasts.length - 1]!.state;
-      expect(finalState.slides).toHaveLength(2);
-      expect(finalState.slides[0]!.content).toBe("Updated B");
-      expect(finalState.slides[1]!.content).toBe("Slide C");
-    });
-
-    test("tools on different decks are isolated", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-a", 2);
-      seedDeck(storeMap, "deck-b", 3);
-
-      await tools.addSlide.execute!({ deckId: "deck-a", content: "New A" });
-
-      // deck-b should be unaffected
-      const result = await tools.changeCurrentSlide.execute!({
-        deckId: "deck-b",
-        slideIndex: 1,
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.slideCount).toBe(3);
-
-      // Verify deck-a broadcast has 3 slides, deck-b broadcast has 3 slides
-      const deckABroadcasts = broadcasts.filter((b) => b.deckId === "deck-a");
-      const deckBBroadcasts = broadcasts.filter((b) => b.deckId === "deck-b");
-      expect(deckABroadcasts[0]!.state.slides).toHaveLength(3);
-      expect(deckBBroadcasts[0]!.state.slides).toHaveLength(3);
-    });
-
-    test("failure on one tool does not affect subsequent tool calls", async () => {
-      const { storeMap, broadcasts, tools } = createTestContext();
-      seedDeck(storeMap, "deck-1", 2);
-
-      // Fail: remove invalid index
-      const failResult = await tools.removeSlide.execute!({
-        deckId: "deck-1",
-        slideIndex: 99,
-      });
-      expect(failResult.success).toBe(false);
-
-      // Succeed: add a slide (should still work)
-      const successResult = await tools.addSlide.execute!({
-        deckId: "deck-1",
-        content: "After failure",
-      });
-      expect(successResult.success).toBe(true);
-      expect(successResult.slideCount).toBe(3);
-
-      // Only one broadcast (the successful one)
-      expect(broadcasts).toHaveLength(1);
-    });
+    const commands = parseSlideCommands(text);
+    expect(commands).toHaveLength(1);
+    expect(commands[0]!.type).toBe("CHANGE_CURRENT_SLIDE");
   });
 
-  // ── Tool metadata ─────────────────────────────────────────────
+  test("returns empty array for text without json blocks", () => {
+    const commands = parseSlideCommands("Just a regular message.");
+    expect(commands).toHaveLength(0);
+  });
 
-  describe("tool metadata", () => {
-    test("tools have correct names", () => {
-      const { tools } = createTestContext();
+  test("skips malformed JSON blocks", () => {
+    const text = `\`\`\`json
+{not valid json}
+\`\`\``;
 
-      expect(tools.addSlide.name).toBe("add_slide");
-      expect(tools.removeSlide.name).toBe("remove_slide");
-      expect(tools.updateSlide.name).toBe("update_slide");
-      expect(tools.reorderSlides.name).toBe("reorder_slides");
-      expect(tools.changeCurrentSlide.name).toBe("change_current_slide");
-    });
+    const commands = parseSlideCommands(text);
+    expect(commands).toHaveLength(0);
+  });
 
-    test("tools have descriptions", () => {
-      const { tools } = createTestContext();
+  test("skips JSON blocks that don't match SlideCommandSchema", () => {
+    const text = `\`\`\`json
+{"type":"UNKNOWN_COMMAND","deckId":"d"}
+\`\`\``;
 
-      expect(tools.addSlide.description).toBeTruthy();
-      expect(tools.removeSlide.description).toBeTruthy();
-      expect(tools.updateSlide.description).toBeTruthy();
-      expect(tools.reorderSlides.description).toBeTruthy();
-      expect(tools.changeCurrentSlide.description).toBeTruthy();
-    });
+    const commands = parseSlideCommands(text);
+    expect(commands).toHaveLength(0);
+  });
 
-    test("tools are marked as server-side", () => {
-      const { tools } = createTestContext();
+  test("skips invalid blocks but keeps valid ones", () => {
+    const text = `\`\`\`json
+{"type":"INVALID"}
+\`\`\`
 
-      expect((tools.addSlide as any).__toolSide).toBe("server");
-      expect((tools.removeSlide as any).__toolSide).toBe("server");
-      expect((tools.updateSlide as any).__toolSide).toBe("server");
-      expect((tools.reorderSlides as any).__toolSide).toBe("server");
-      expect((tools.changeCurrentSlide as any).__toolSide).toBe("server");
-    });
+\`\`\`json
+{"type":"ADD_SLIDE","deckId":"d","slide":{"content":"Valid"}}
+\`\`\``;
 
-    test("createServerTools returns exactly 5 tools", () => {
-      const storeMap = new Map<string, DeckStateInternal>();
-      const runtime = createSlideRuntime(storeMap);
-      const tools = createServerTools(runtime, () => {});
+    const commands = parseSlideCommands(text);
+    expect(commands).toHaveLength(1);
+    expect(commands[0]!.type).toBe("ADD_SLIDE");
+  });
 
-      expect(tools).toHaveLength(5);
-    });
+  test("handles empty json block", () => {
+    const text = `\`\`\`json
+\`\`\``;
+
+    const commands = parseSlideCommands(text);
+    expect(commands).toHaveLength(0);
+  });
+});
+
+// ── executeSlideCommands ──────────────────────────────────────────
+
+describe("executeSlideCommands", () => {
+  test("executes ADD_SLIDE and broadcasts", async () => {
+    const { storeMap, runtime, broadcasts, broadcast } = createTestContext();
+    seedDeck(storeMap, "deck-1", 1);
+
+    const commands = parseSlideCommands(`\`\`\`json
+{"type":"ADD_SLIDE","deckId":"deck-1","slide":{"content":"New slide"}}
+\`\`\``);
+
+    const result = await executeSlideCommands(commands, runtime, broadcast);
+
+    expect(result.executed).toBe(1);
+    expect(result.failed).toBe(0);
+    expect(broadcasts).toHaveLength(1);
+    expect(broadcasts[0]!.state.slides).toHaveLength(2);
+  });
+
+  test("executes REMOVE_SLIDE and broadcasts", async () => {
+    const { storeMap, runtime, broadcasts, broadcast } = createTestContext();
+    seedDeck(storeMap, "deck-1", 3);
+
+    const commands = parseSlideCommands(`\`\`\`json
+{"type":"REMOVE_SLIDE","deckId":"deck-1","slideIndex":1}
+\`\`\``);
+
+    const result = await executeSlideCommands(commands, runtime, broadcast);
+
+    expect(result.executed).toBe(1);
+    expect(result.failed).toBe(0);
+    expect(broadcasts).toHaveLength(1);
+    expect(broadcasts[0]!.state.slides).toHaveLength(2);
+  });
+
+  test("executes UPDATE_SLIDE and broadcasts", async () => {
+    const { storeMap, runtime, broadcasts, broadcast } = createTestContext();
+    seedDeck(storeMap, "deck-1", 2);
+
+    const commands = parseSlideCommands(`\`\`\`json
+{"type":"UPDATE_SLIDE","deckId":"deck-1","slideIndex":0,"content":"Updated"}
+\`\`\``);
+
+    const result = await executeSlideCommands(commands, runtime, broadcast);
+
+    expect(result.executed).toBe(1);
+    expect(result.failed).toBe(0);
+    expect(broadcasts[0]!.state.slides[0]!.content).toBe("Updated");
+  });
+
+  test("executes CHANGE_CURRENT_SLIDE and broadcasts", async () => {
+    const { storeMap, runtime, broadcasts, broadcast } = createTestContext();
+    seedDeck(storeMap, "deck-1", 5);
+
+    const commands = parseSlideCommands(`\`\`\`json
+{"type":"CHANGE_CURRENT_SLIDE","deckId":"deck-1","slideIndex":3}
+\`\`\``);
+
+    const result = await executeSlideCommands(commands, runtime, broadcast);
+
+    expect(result.executed).toBe(1);
+    expect(result.failed).toBe(0);
+    expect(broadcasts[0]!.state.currentSlide).toBe(3);
+  });
+
+  test("executes multiple commands sequentially", async () => {
+    const { storeMap, runtime, broadcasts, broadcast } = createTestContext();
+    seedDeck(storeMap, "deck-1", 0);
+
+    const commands = parseSlideCommands(`\`\`\`json
+{"type":"ADD_SLIDE","deckId":"deck-1","slide":{"content":"A"}}
+\`\`\`
+
+\`\`\`json
+{"type":"ADD_SLIDE","deckId":"deck-1","slide":{"content":"B"}}
+\`\`\``);
+
+    const result = await executeSlideCommands(commands, runtime, broadcast);
+
+    expect(result.executed).toBe(2);
+    expect(result.failed).toBe(0);
+    expect(broadcasts).toHaveLength(2);
+  });
+
+  test("counts failures for nonexistent deck", async () => {
+    const { runtime, broadcasts, broadcast } = createTestContext();
+
+    const commands = parseSlideCommands(`\`\`\`json
+{"type":"REMOVE_SLIDE","deckId":"nonexistent","slideIndex":0}
+\`\`\``);
+
+    const result = await executeSlideCommands(commands, runtime, broadcast);
+
+    expect(result.executed).toBe(0);
+    expect(result.failed).toBe(1);
+    expect(broadcasts).toHaveLength(0);
+  });
+
+  test("counts failures for invalid slide index", async () => {
+    const { storeMap, runtime, broadcasts, broadcast } = createTestContext();
+    seedDeck(storeMap, "deck-1", 2);
+
+    const commands = parseSlideCommands(`\`\`\`json
+{"type":"REMOVE_SLIDE","deckId":"deck-1","slideIndex":99}
+\`\`\``);
+
+    const result = await executeSlideCommands(commands, runtime, broadcast);
+
+    expect(result.executed).toBe(0);
+    expect(result.failed).toBe(1);
+    expect(broadcasts).toHaveLength(0);
+  });
+
+  test("handles empty commands array", async () => {
+    const { runtime, broadcasts, broadcast } = createTestContext();
+
+    const result = await executeSlideCommands([], runtime, broadcast);
+
+    expect(result.executed).toBe(0);
+    expect(result.failed).toBe(0);
+    expect(broadcasts).toHaveLength(0);
+  });
+
+  test("partial failure: valid + invalid commands", async () => {
+    const { storeMap, runtime, broadcasts, broadcast } = createTestContext();
+    seedDeck(storeMap, "deck-1", 2);
+
+    const commands = parseSlideCommands(`\`\`\`json
+{"type":"ADD_SLIDE","deckId":"deck-1","slide":{"content":"Valid"}}
+\`\`\`
+
+\`\`\`json
+{"type":"REMOVE_SLIDE","deckId":"deck-1","slideIndex":99}
+\`\`\``);
+
+    const result = await executeSlideCommands(commands, runtime, broadcast);
+
+    expect(result.executed).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(broadcasts).toHaveLength(1);
   });
 });

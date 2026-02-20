@@ -1,731 +1,114 @@
 [
   {
     "category": "commit",
-    "name": "S1-C1: Schema Package Setup",
-    "description": "Initialize @mnestia/schema package structure",
+    "name": "AI-C1: Replace TanStack AI with Pi RPC Client",
+    "description": "Remove @tanstack/ai and @tanstack/ai-openai deps, add Pi RPC subprocess client to agent-service",
     "steps": [
-      "Create packages/schema/ directory",
-      "Create package.json with name @mnestia/schema, version 0.0.1",
-      "Create tsconfig.json for declaration emit",
-      "Add build script: tsc --emitDeclarationOnly",
-      "Create src/index.ts entry point"
+      "Remove @tanstack/ai and @tanstack/ai-openai from packages/server/package.json",
+      "Remove packages/server/src/agent/agent-tools.ts (TanStack toolDefinition wrappers no longer needed)",
+      "Create packages/server/src/agent/pi-rpc-client.ts — spawns `pi --mode rpc --no-session` as child process, sends/receives JSON lines over stdin/stdout",
+      "PiRpcClient class: constructor takes { provider?, model? }, exposes send(command), onEvent(callback), prompt(message), abort(), destroy()",
+      "Internally: readline on stdout, parse JSON lines, route to event callbacks",
+      "Handle process lifecycle: spawn on first use, kill on destroy, restart on crash",
+      "Run bun run typecheck to verify no dangling TanStack imports"
     ],
     "dependencies": [],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S1-C2: Core Schema Definitions",
-    "description": "Define Slide, SlideFrontmatter, and valibot schemas",
-    "steps": [
-      "Create src/slide.ts with Slide schema and type (id, index, component, frontmatter, filepath)",
-      "Create SlideFrontmatter schema and type (layout, transition, background, notes, clicks)",
-      "Create src/navigation.ts with NavigationMode union ('standard' | 'vim' | 'both')",
-      "Create NavigationConfig schema and type (mode, shortcuts)",
-      "Export all from src/index.ts"
-    ],
-    "dependencies": ["S1-C1: Schema Package Setup"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S1-C3: Deck and Theme Schemas",
-    "description": "Define DeckConfig, ThemeModule, and export schemas",
-    "steps": [
-      "Create src/deck.ts with DeckConfig schema and type (slides, theme, navigation, aspectRatio, export)",
-      "Create DeckDefinitionInput schema and type for defineDeck input",
-      "Create src/theme.ts with ThemeModule schema and type (name, layouts, components, styles, setup)",
-      "Create src/export.ts with ExportConfig and ExportOptions schemas and types",
-      "Create src/index.ts barrel exports"
-    ],
-    "dependencies": ["S1-C2: Core Schema Definitions"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S1-C4: Schema Package Build",
-    "description": "Configure and verify schema package build",
-    "steps": [
-      "Add valibot as dependency",
-      "Add 'types' field to package.json pointing to dist/index.d.ts",
-      "Add 'files' array to include dist/",
-      "Run bun run build to generate .d.ts files",
-      "Verify dist/ contains all type declarations"
-    ],
-    "dependencies": ["S1-C3: Deck and Theme Schemas"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S2-C1: Core Package Dependencies",
-    "description": "Add dependencies to @mnestia/core",
-    "steps": [
-      "Add @mnestia/schema as dependency in packages/core/package.json",
-      "Add @effect-atom/atom-react as dependency",
-      "Run bun install to update lockfile",
-      "Verify node_modules includes @effect-atom/atom-react"
-    ],
-    "dependencies": ["S1-C4: Schema Package Build"],
-    "passes": false
-  },
-    {
-      "category": "commit",
-      "name": "S2-C2: Deck Atom State",
-      "description": "Create effect-atom for deck state",
-      "steps": [
-        "Create src/atoms/deck-atom.ts",
-        "Define DeckState interface with currentSlide, totalSlides, history, isPresenterMode",
-        "Create createDeckAtom(config) factory function using Atom.make",
-        "Use Atom.keepAlive for persistent state",
-        "Export DeckAtom type"
-      ],
-      "dependencies": ["S2-C1: Core Package Dependencies"],
-      "passes": false
-    },
-    {
-      "category": "commit",
-      "name": "S2-C3: Navigation Actions",
-      "description": "Add navigation methods to deck atom",
-      "steps": [
-        "Add nextSlide action that increments currentSlide and pushes to history",
-        "Add prevSlide action that decrements currentSlide",
-        "Add goToSlide(index) action with bounds checking",
-        "Add goToFirstSlide and goToLastSlide convenience actions",
-        "Add canGoNext and canGoPrev computed selectors"
-      ],
-      "dependencies": ["S2-C2: Deck Atom State"],
-      "passes": false
-    },
-  {
-    "category": "commit",
-    "name": "S2-C4: defineDeck Function",
-    "description": "Implement deck definition API",
-    "steps": [
-      "Create src/defineDeck.ts",
-      "Implement defineDeck(slides, options) function",
-      "Validate slides array is non-empty",
-      "Set defaults for theme, navigation, aspectRatio",
-      "Return DeckConfig object with processed slides"
-    ],
-    "dependencies": ["S2-C3: Navigation Actions"],
-    "passes": false
-  },
-    {
-      "category": "commit",
-      "name": "S2-C5: Keyboard Navigation Hook",
-      "description": "Create useKeyboardNavigation hook",
-      "steps": [
-        "Create src/hooks/useKeyboardNavigation.ts",
-        "Accept navigation config (mode, custom shortcuts)",
-        "Handle ArrowRight/Space/l keys for next",
-        "Handle ArrowLeft/h keys for prev",
-        "Handle Home/0 for first slide, End/$ for last",
-        "Add event listener on mount, cleanup on unmount"
-      ],
-      "dependencies": ["S2-C4: defineDeck Function"],
-      "passes": false
-    },
-    {
-      "category": "commit",
-      "name": "S2-C6: Core Package Tests",
-      "description": "Add unit tests for atom and navigation",
-      "steps": [
-        "Create src/atoms/deck-atom.test.ts",
-        "Test initial state creation",
-        "Test nextSlide/prevSlide with boundary conditions",
-        "Test goToSlide with invalid indices",
-        "Create src/hooks/useKeyboardNavigation.test.ts",
-        "Test keyboard event handling",
-        "Run bun test and verify all pass"
-      ],
-      "dependencies": ["S2-C5: Keyboard Navigation Hook"],
-      "passes": false
-    },
-  {
-    "category": "commit",
-    "name": "S3-C1: Theme Base Package Setup",
-    "description": "Initialize @mnestia/theme-base package",
-    "steps": [
-      "Create packages/theme-base/ directory",
-      "Create package.json with name @mnestia/theme-base",
-      "Add @mnestia/schema as dependency",
-      "Create directory structure: layouts/, components/, styles/",
-      "Create src/index.ts entry"
-    ],
-    "dependencies": ["S1-C4: Schema Package Build"],
     "passes": true
   },
   {
     "category": "commit",
-    "name": "S3-C2: Theme CSS Variables",
-    "description": "Create base CSS variable system",
+    "name": "AI-C2: Schema — Replace TanStack Tool JSON Schemas with Plain Tool Descriptions",
+    "description": "Convert AI tool schemas from @valibot/to-json-schema (TanStack format) to plain string descriptions for Pi system prompt",
     "steps": [
-      "Create styles/variables.css with color tokens",
-      "Define --mnestia-bg, --mnestia-text, --mnestia-primary",
-      "Add typography variables: font-family, sizes",
-      "Add spacing variables for padding/margins",
-      "Create light and dark mode variants using data attributes"
+      "Remove toStandardJsonSchema imports and all tool JSON schema exports (addSlideInputSchema, removeSlideInputSchema, etc.) from packages/schema/src/ai-commands.ts",
+      "Remove @valibot/to-json-schema from packages/schema/package.json if only used here (check first)",
+      "Keep SlideCommandSchema and SlideCommand type — these are the structured command types the AI should output",
+      "Add new export: SLIDE_TOOL_DESCRIPTIONS — a plain string constant describing available tools, their parameters, and expected JSON output format (SlideCommand). This will be injected into the Pi system prompt",
+      "Run bun run typecheck in packages/schema"
     ],
-    "dependencies": ["S3-C1: Theme Base Package Setup"],
+    "dependencies": ["AI-C1: Replace TanStack AI with Pi RPC Client"],
     "passes": true
   },
   {
     "category": "commit",
-    "name": "S3-C3: Default Layout",
-    "description": "Create default content layout",
+    "name": "AI-C3: Rewrite agent-service — Effect-based Command Executor",
+    "description": "Rewrite agent-service to parse SlideCommand JSON from Pi agent responses and execute via Effect SlideService",
     "steps": [
-      "Create layouts/default.tsx",
-      "Accept children prop for slide content",
-      "Apply theme padding and max-width",
-      "Add data-layout='default' attribute",
-      "Export from layouts/index.ts"
+      "Rewrite packages/server/src/agent/agent-service.ts",
+      "Remove all TanStack tool server handlers (addSlideDef.server, etc.)",
+      "Create parseSlideCommand(text: string): SlideCommand | null — extracts JSON from agent text response, validates against SlideCommandSchema using valibot parse",
+      "Create executeSlideCommand(command: SlideCommand): Effect<ServerDeckState, SlideError, SlideService> — pattern match on command.type, delegate to SlideService methods",
+      "Keep BroadcastFn type and broadcast-after-execution pattern",
+      "Keep runServiceEffect helper, Sentry tracing spans (agent.tool.*), and captureEffectError",
+      "Run bun run typecheck"
     ],
-    "dependencies": ["S3-C2: Theme CSS Variables"],
+    "dependencies": ["AI-C2: Schema — Replace TanStack Tool JSON Schemas with Plain Tool Descriptions"],
     "passes": true
   },
   {
     "category": "commit",
-    "name": "S3-C4: Cover Layout",
-    "description": "Create cover/title slide layout",
+    "name": "AI-C4: Rewrite agent-controller — Pi RPC Integration",
+    "description": "Replace TanStack AI chat() streaming with Pi RPC subprocess prompt/event flow",
     "steps": [
-      "Create layouts/cover.tsx",
-      "Full-screen centered layout",
-      "Support title and subtitle props",
-      "Large typography for impact",
-      "Add background support via CSS"
+      "Rewrite packages/server/src/agent/agent-controller.ts",
+      "Remove all TanStack AI imports (chat, toServerSentEventsResponse, maxIterations, createOpenaiChat)",
+      "Replace openaiApiKey config check with pi binary availability check (which pi)",
+      "POST /agent/chat handler: create or reuse PiRpcClient instance (one per server lifetime, or pool by deckId)",
+      "Build system prompt with SLIDE_TOOL_DESCRIPTIONS from schema + deck context",
+      "On first prompt: send set_model if configured, then prompt with system context + user message",
+      "Stream Pi events (message_update text_delta) back to client as SSE (same interface the frontend expects)",
+      "On agent_end: extract last assistant text, run parseSlideCommand, if valid execute via executeSlideCommand + broadcast",
+      "Keep Sentry span wrapping (agent.chat)",
+      "Run bun run typecheck"
     ],
-    "dependencies": ["S3-C3: Default Layout"],
+    "dependencies": ["AI-C3: Rewrite agent-service — Effect-based Command Executor"],
     "passes": true
   },
   {
     "category": "commit",
-    "name": "S3-C5: Center Layout",
-    "description": "Create centered content layout",
+    "name": "AI-C5: Config — Replace OpenAI Key with Pi Agent Config",
+    "description": "Update AppConfig to support Pi agent provider/model instead of OpenAI API key",
     "steps": [
-      "Create layouts/center.tsx",
-      "Center content both horizontally and vertically",
-      "Support single focus element",
-      "Apply theme typography",
-      "Export from layouts/index.ts"
+      "Update packages/server/src/config/app-config.ts",
+      "Remove openaiApiKey field from AppConfig interface",
+      "Add piProvider: Option<string> (env PI_PROVIDER, default none — uses pi default)",
+      "Add piModel: Option<string> (env PI_MODEL, default none — uses pi default)",
+      "Update loadAppConfig Effect.gen to load new config fields",
+      "Update agent-controller.ts to use new config fields when initializing PiRpcClient",
+      "Run bun run typecheck"
     ],
-    "dependencies": ["S3-C4: Cover Layout"],
+    "dependencies": ["AI-C4: Rewrite agent-controller — Pi RPC Integration"],
     "passes": true
   },
   {
     "category": "commit",
-    "name": "S3-C6: Split Layout",
-    "description": "Create two-column layout",
+    "name": "AI-C6: Update AGENTS.md and Remove @valibot/to-json-schema",
+    "description": "Update server AGENTS.md to reflect Pi RPC architecture, clean up unused deps",
     "steps": [
-      "Create layouts/split.tsx",
-      "Accept left and right props (React nodes)",
-      "Use CSS grid or flexbox 50/50 split",
-      "Support configurable split ratio",
-      "Responsive stacking on smaller viewports"
+      "Update packages/server/AGENTS.md: replace TanStack AI references with Pi RPC integration description",
+      "Update section 7 (AI Agent Integration) to describe Pi subprocess model",
+      "Update section 8 (Agent Flow): Client → POST /agent/chat → Pi RPC subprocess → structured SlideCommand → SlideService → broadcast",
+      "Remove @valibot/to-json-schema from packages/server/package.json if still present",
+      "Remove @tanstack/ai and @tanstack/ai-openai from package.json if not already removed",
+      "Run bun install to clean lockfile",
+      "Run bun run typecheck && bun run lint"
     ],
-    "dependencies": ["S3-C5: Center Layout"],
+    "dependencies": ["AI-C5: Config — Replace OpenAI Key with Pi Agent Config"],
     "passes": true
   },
   {
     "category": "commit",
-    "name": "S3-C7: Grid Layout",
-    "description": "Create multi-column grid layout",
+    "name": "AI-C7: Tests — Pi RPC Client and Command Executor",
+    "description": "Add unit tests for Pi RPC client and SlideCommand parsing/execution",
     "steps": [
-      "Create layouts/grid.tsx",
-      "Accept columns prop (number or array of widths)",
-      "Use CSS grid with gap spacing",
-      "Support auto-flow for dynamic content",
-      "Export from layouts/index.ts"
+      "Create packages/server/test/agent/pi-rpc-client.test.ts — test constructor, onEvent, destroy, isAlive lifecycle",
+      "Rewrite packages/server/test/agent/agent-service.test.ts — test parseSlideCommands with valid/invalid JSON, test executeSlideCommands for each command type",
+      "Rewrite packages/server/test/agent/agent-controller.test.ts — test endpoint structure, request validation, SSE response",
+      "Fix test/helpers.ts — remove openaiApiKey, add piProvider/piModel",
+      "Fix pi-rpc-client.ts — export PiRpcEvent interface",
+      "Run bun test test/ and verify all pass"
     ],
-    "dependencies": ["S3-C6: Split Layout"],
+    "dependencies": ["AI-C6: Update AGENTS.md and Remove @valibot/to-json-schema"],
     "passes": true
-  },
-  {
-    "category": "commit",
-    "name": "S3-C8: CodeBlock Component",
-    "description": "Create syntax highlighted code component",
-    "steps": [
-      "Create components/CodeBlock.tsx",
-      "Accept code, language, and filename props",
-      "Add line numbers option",
-      "Style with theme monospace font",
-      "Export from components/index.ts"
-    ],
-    "dependencies": ["S3-C2: Theme CSS Variables"],
-    "passes": true
-  },
-  {
-    "category": "commit",
-    "name": "S3-C9: Image Component",
-    "description": "Create responsive image component",
-    "steps": [
-      "Create components/Image.tsx",
-      "Accept src, alt, caption props",
-      "Support object-fit options (cover, contain)",
-      "Add caption styling below image",
-      "Handle loading state"
-    ],
-    "dependencies": ["S3-C8: CodeBlock Component"],
-    "passes": true
-  },
-  {
-    "category": "commit",
-    "name": "S3-C10: Quote Component",
-    "description": "Create blockquote component",
-    "steps": [
-      "Create components/Quote.tsx",
-      "Accept quote text and author/attribution",
-      "Style with accent color border",
-      "Large quote marks decoration",
-      "Export from components/index.ts"
-    ],
-    "dependencies": ["S3-C9: Image Component"],
-    "passes": true
-  },
-  {
-    "category": "commit",
-    "name": "S3-C11: Table Component",
-    "description": "Create styled table component",
-    "steps": [
-      "Create components/Table.tsx",
-      "Accept headers and rows data",
-      "Add striped rows option",
-      "Style with theme borders and colors",
-      "Support responsive overflow"
-    ],
-    "dependencies": ["S3-C10: Quote Component"],
-    "passes": true
-  },
-  {
-    "category": "commit",
-    "name": "S3-C12: Theme Setup and Export",
-    "description": "Create theme entry point and setup",
-    "steps": [
-      "Create src/setup.ts with theme initialization",
-      "Import all layout and component styles",
-      "Create src/index.ts exporting ThemeModule",
-      "Import all layouts and components into theme object",
-      "Add build configuration for theme package"
-    ],
-    "dependencies": ["S3-C7: Grid Layout", "S3-C11: Table Component"],
-    "passes": true
-  },
-  {
-    "category": "commit",
-    "name": "S4-C1: Rename Web to Client",
-    "description": "Rename @mnestia/web to @mnestia/client",
-    "steps": [
-      "Rename packages/web directory to packages/client",
-      "Update package.json name to @mnestia/client",
-      "Update all internal imports",
-      "Update moon.yml if needed",
-      "Verify build still works"
-    ],
-    "dependencies": ["S2-C6: Core Package Tests", "S3-C12: Theme Setup and Export"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S4-C2: Client Dependencies",
-    "description": "Add required dependencies to client package",
-    "steps": [
-      "Add @mnestia/core and @mnestia/schema as dependencies",
-      "Add @mnestia/theme-base as devDependency",
-      "Add react and react-dom peer dependencies",
-      "Install shadcn/ui components: button, slider",
-      "Run bun install"
-    ],
-    "dependencies": ["S4-C1: Rename Web to Client"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S4-C3: Deck Provider",
-    "description": "Create DeckProvider context component",
-    "steps": [
-      "Create src/components/DeckProvider.tsx",
-      "Accept DeckConfig as prop",
-      "Initialize deck atom with config",
-      "Provide atom context to children",
-      "Export from components/index.ts"
-    ],
-    "dependencies": ["S4-C2: Client Dependencies"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S4-C4: useDeck Hook",
-    "description": "Create useDeck hook for accessing deck state",
-    "steps": [
-      "Create src/hooks/useDeck.ts",
-      "Return currentSlide, totalSlides, navigation methods",
-      "Connect to deck atom via DeckProvider context",
-      "Add TypeScript types for return value",
-      "Export from hooks/index.ts"
-    ],
-    "dependencies": ["S4-C3: Deck Provider"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S4-C5: Theme Resolution",
-    "description": "Implement theme loading and resolution",
-    "steps": [
-      "Create src/logic/resolveTheme.ts",
-      "Implement resolveTheme(themeName) async function",
-      "Support dynamic import of theme packages",
-      "Add fallback to @mnestia/theme-base",
-      "Cache loaded themes"
-    ],
-    "dependencies": ["S4-C4: useDeck Hook"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S4-C6: Slide Viewer Component",
-    "description": "Create main slide rendering component",
-    "steps": [
-      "Create src/components/SlideViewer.tsx",
-      "Accept theme prop",
-      "Get current slide from useDeck hook",
-      "Render slide with layout wrapper from theme",
-      "Handle slide loading state"
-    ],
-    "dependencies": ["S4-C5: Theme Resolution"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S4-C7: Navigation Controls",
-    "description": "Add slide navigation UI controls",
-    "steps": [
-      "Create src/components/NavigationControls.tsx",
-      "Add previous/next buttons using shadcn Button",
-      "Add progress indicator using shadcn Slider",
-      "Show current slide number / total",
-      "Style with Tailwind"
-    ],
-    "dependencies": ["S4-C6: Slide Viewer Component"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S4-C8: Keyboard Event Handling",
-    "description": "Add keyboard navigation to App",
-    "steps": [
-      "Update src/App.tsx to use useKeyboardNavigation",
-      "Import hook from @mnestia/core",
-      "Connect navigation actions from useDeck",
-      "Prevent default on handled keys",
-      "Add visual focus indicator"
-    ],
-    "dependencies": ["S4-C7: Navigation Controls"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S4-C9: App Integration",
-    "description": "Integrate all components in App.tsx",
-    "steps": [
-      "Create complete App.tsx with DeckProvider",
-      "Add SlideViewer and NavigationControls",
-      "Accept deck config as prop or from context",
-      "Add error boundary for graceful failures",
-      "Export App as default"
-    ],
-    "dependencies": ["S4-C8: Keyboard Event Handling"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S5-C1: Parser Package Setup",
-    "description": "Initialize @mnestia/parser package",
-    "steps": [
-      "Create packages/parser/ directory",
-      "Create package.json with @mnestia/parser name",
-      "Add @mnestia/schema dependency",
-      "Add @mdx-js/mdx, remark, rehype dependencies",
-      "Create src/index.ts entry"
-    ],
-    "dependencies": ["S1-C4: Schema Package Build"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S5-C2: Frontmatter Extraction",
-    "description": "Implement frontmatter parsing from MDX",
-    "steps": [
-      "Create src/frontmatter.ts",
-      "Install gray-matter for frontmatter parsing",
-      "Implement extractFrontmatter(content) function",
-      "Parse YAML frontmatter into SlideFrontmatter",
-      "Handle missing frontmatter gracefully"
-    ],
-    "dependencies": ["S5-C1: Parser Package Setup"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S5-C3: MDX to JSX Transform",
-    "description": "Transform MDX content to JSX",
-    "steps": [
-      "Create src/transform.ts",
-      "Use @mdx-js/mdx to compile MDX",
-      "Configure remark plugins for frontmatter",
-      "Configure rehype plugins for syntax highlighting",
-      "Export transformMdx(content) function"
-    ],
-    "dependencies": ["S5-C2: Frontmatter Extraction"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S5-C4: Parse MDX Slide",
-    "description": "Complete MDX slide parsing",
-    "steps": [
-      "Create src/parseSlide.ts",
-      "Implement parseSlide(filePath) async function",
-      "Read file content using Bun.file",
-      "Extract frontmatter",
-      "Transform MDX to JSX",
-      "Return ParsedSlide object with all metadata"
-    ],
-    "dependencies": ["S5-C3: MDX to JSX Transform"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S5-C5: Parse TSX Slide",
-    "description": "Parse TSX slides with options export",
-    "steps": [
-      "Create src/parseTsxSlide.ts",
-      "Read TSX file content",
-      "Parse AST to find exported options object",
-      "Extract frontmatter from options export",
-      "Return ParsedSlide with component reference"
-    ],
-    "dependencies": ["S5-C4: Parse MDX Slide"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S5-C6: Slide Manifest Generation",
-    "description": "Generate manifest for HMR",
-    "steps": [
-      "Create src/manifest.ts",
-      "Define SlideManifest interface",
-      "Implement generateSlideManifest(slides) function",
-      "Create manifest JSON structure",
-      "Export for Vite plugin consumption"
-    ],
-    "dependencies": ["S5-C5: Parse TSX Slide"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S5-C7: Parser Tests",
-    "description": "Add parser unit tests",
-    "steps": [
-      "Create src/parseSlide.test.ts",
-      "Test parsing MDX with frontmatter",
-      "Test parsing MDX without frontmatter",
-      "Test parsing TSX with options export",
-      "Run bun test and verify"
-    ],
-    "dependencies": ["S5-C6: Slide Manifest Generation"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S6-C1: CLI Package Setup",
-    "description": "Initialize @mnestia/cli package",
-    "steps": [
-      "Create packages/cli/ directory",
-      "Create package.json with @mnestia/cli name",
-      "Add bin entry for mnestia command",
-      "Add vite, commander, ora, chalk dependencies",
-      "Create src/index.ts entry"
-    ],
-    "dependencies": ["S5-C7: Parser Tests"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S6-C2: Mnestia Vite Plugin",
-    "description": "Create Vite plugin for slide processing",
-    "steps": [
-      "Create src/plugin/mnestiaPlugin.ts",
-      "Implement plugin with name 'mnestia'",
-      "Add resolveId for virtual:mnestia/slides",
-      "Add load handler for virtual module",
-      "Export plugin as default"
-    ],
-    "dependencies": ["S6-C1: CLI Package Setup"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S6-C3: Virtual Slides Module",
-    "description": "Implement virtual module for slide imports",
-    "steps": [
-      "Create src/plugin/virtualSlides.ts",
-      "Generate virtual module code from slide files",
-      "Export array of slide imports",
-      "Handle both MDX and TSX slides",
-      "Support HMR updates"
-    ],
-    "dependencies": ["S6-C2: Mnestia Vite Plugin"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S6-C4: File Watching",
-    "description": "Add file watching for slide files",
-    "steps": [
-      "Update mnestiaPlugin to use configureServer",
-      "Watch slides/**/*.mdx and slides/**/*.tsx files",
-      "Regenerate virtual module on file change",
-      "Trigger HMR update via server.ws.send",
-      "Preserve current slide index on reload"
-    ],
-    "dependencies": ["S6-C3: Virtual Slides Module"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S6-C5: mnestia.config.ts Support",
-    "description": "Add configuration file support",
-    "steps": [
-      "Create src/config/loadConfig.ts",
-      "Look for mnestia.config.ts in project root",
-      "Define MnestiaConfig interface with theme, slides, vite options",
-      "Implement defineConfig helper function",
-      "Merge user config with defaults"
-    ],
-    "dependencies": ["S6-C4: File Watching"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S6-C6: Dev Command",
-    "description": "Implement mnestia dev command",
-    "steps": [
-      "Create src/commands/dev.ts",
-      "Parse CLI args with commander",
-      "Load mnestia.config.ts",
-      "Create Vite dev server with mnestiaPlugin",
-      "Start server on default port 3000",
-      "Print dev server URL"
-    ],
-    "dependencies": ["S6-C5: mnestia.config.ts Support"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S6-C7: CLI Entry Point",
-    "description": "Create CLI command registration",
-    "steps": [
-      "Update src/index.ts with commander setup",
-      "Register dev command",
-      "Add global options (--version, --help)",
-      "Parse process.argv",
-      "Handle unknown commands gracefully"
-    ],
-    "dependencies": ["S6-C6: Dev Command"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S7-C1: Test Deck Structure",
-    "description": "Create test deck directory structure",
-    "steps": [
-      "Create examples/test-deck/ directory",
-      "Create slides/ subdirectory",
-      "Create public/ subdirectory for assets",
-      "Create components/ for custom components"
-    ],
-    "dependencies": ["S6-C7: CLI Entry Point"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S7-C2: Test Deck Config",
-    "description": "Create mnestia.config.ts for test deck",
-    "steps": [
-      "Create mnestia.config.ts with theme: @mnestia/theme-base",
-      "Configure slides glob: './slides/**/*.mdx'",
-      "Add export configuration",
-      "Set aspectRatio to 16/9"
-    ],
-    "dependencies": ["S7-C1: Test Deck Structure"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S7-C3: Test Deck Definition",
-    "description": "Create deck.ts with defineDeck",
-    "steps": [
-      "Create deck.ts importing defineDeck from @mnestia/core",
-      "Import slides from virtual:mnestia/slides",
-      "Call defineDeck with slides array",
-      "Export default deck config"
-    ],
-    "dependencies": ["S7-C2: Test Deck Config"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S7-C4: MDX Test Slides",
-    "description": "Create sample MDX slides",
-    "steps": [
-      "Create slides/01-intro.mdx with frontmatter",
-      "Add cover layout with title and subtitle",
-      "Create slides/02-content.mdx with bullet points",
-      "Add default layout",
-      "Create slides/03-code.mdx with code block"
-    ],
-    "dependencies": ["S7-C3: Test Deck Definition"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S7-C5: TSX Test Slide",
-    "description": "Create TSX slide component",
-    "steps": [
-      "Create slides/04-component.tsx",
-      "Add interactive counter component",
-      "Export options with frontmatter",
-      "Use default layout",
-      "Import and use in deck"
-    ],
-    "dependencies": ["S7-C4: MDX Test Slides"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S7-C6: Test Deck Entry",
-    "description": "Create test deck entry HTML and main.tsx",
-    "steps": [
-      "Create index.html with root div",
-      "Create main.tsx importing deck and App",
-      "Render App with deck config",
-      "Add script tag to index.html"
-    ],
-    "dependencies": ["S7-C5: TSX Test Slide"],
-    "passes": false
-  },
-  {
-    "category": "commit",
-    "name": "S7-C7: Run Tracer Bullet",
-    "description": "Run dev server and verify end-to-end",
-    "steps": [
-      "Run mnestia dev in examples/test-deck/",
-      "Verify server starts on port 3000",
-      "Navigate to localhost:3000",
-      "Test arrow key navigation through slides",
-      "Test vim key navigation (hjkl)",
-      "Edit a slide file and verify HMR"
-    ],
-    "dependencies": ["S7-C6: Test Deck Entry"],
-    "passes": false
   }
 ]

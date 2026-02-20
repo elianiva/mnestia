@@ -3,13 +3,12 @@ import { Layer } from "effect";
 import type { ServerDeckState } from "@mnestia/schema";
 import { SlideService } from "../../src/domain/slide-service";
 import { type DeckStateInternal } from "../../src/domain/slide-store";
-import { SlideServiceLive, createSlideStoreLive } from "../../src/domain/slide-layer";
+import { createSlideStoreLive } from "../../src/domain/slide-layer";
 import {
   seedDeck,
   expectSuccess,
   expectFailureWithTag,
   runWithService,
-  runEffect,
 } from "../helpers";
 
 // ── Test Helpers ──────────────────────────────────────────────────
@@ -20,7 +19,7 @@ function createTestLayer(): {
 } {
   const storeMap = new Map<string, DeckStateInternal>();
   const storeLayer = createSlideStoreLive(storeMap);
-  const layer = SlideServiceLive.pipe(Layer.provide(storeLayer));
+  const layer = SlideService.Default.pipe(Layer.provide(storeLayer));
   return { layer, storeMap };
 }
 
