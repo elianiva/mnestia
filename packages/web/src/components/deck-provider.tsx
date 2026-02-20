@@ -1,18 +1,34 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { DeckConfig } from "@mnestia/schema/deck";
+import type { SlideFrontmatter } from "@mnestia/schema/slide";
 import type { ThemeModule } from "@mnestia/schema/theme";
 import { createDeckAtom, type DeckAtom } from "@mnestia/core/atoms/deck";
 
+export interface SerializableSlide {
+	id: string;
+	index: number;
+	filepath: string;
+	frontmatter: SlideFrontmatter;
+}
+
+export interface SerializableDeckConfig {
+	slides: SerializableSlide[];
+	theme: DeckConfig["theme"];
+	navigation: DeckConfig["navigation"];
+	aspectRatio: DeckConfig["aspectRatio"];
+	export?: DeckConfig["export"];
+}
+
 interface DeckContextValue {
 	store: DeckAtom;
-	config: DeckConfig;
+	config: SerializableDeckConfig;
 	theme: ThemeModule;
 }
 
 const DeckContext = createContext<DeckContextValue | null>(null);
 
 export interface DeckProviderProps {
-	config: DeckConfig;
+	config: SerializableDeckConfig;
 	children: ReactNode;
 }
 
@@ -40,7 +56,7 @@ async function loadTheme(theme: string | ThemeModule): Promise<ThemeModule> {
 }
 
 export function DeckProvider({ config, children }: DeckProviderProps) {
-	const [store] = useState(() => createDeckAtom(config));
+	const [store] = useState(() => createDeckAtom(config as DeckConfig));
 	const [theme, setTheme] = useState<ThemeModule | null>(null);
 	const [error, setError] = useState<Error | null>(null);
 

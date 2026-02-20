@@ -1,20 +1,22 @@
-import type { Plugin } from "vite";
+import type { Plugin, ViteDevServer } from "vite";
 import { resolve } from "pathe";
 import type { DeckConfig } from "@mnestia/schema/deck";
-import { SlideReference } from "@mnestia/core/slide";
 
-const VIRTUAL_DECK_ID = "virtual:mnestia/deck";
-const RESOLVED_DECK_ID = "\0" + VIRTUAL_DECK_ID;
+export const VIRTUAL_DECK_ID = "virtual:mnestia/deck";
+export const RESOLVED_DECK_ID = "\0" + VIRTUAL_DECK_ID;
 
 export interface DeckPluginOptions {
 	root: string;
+	getDeckConfig: () => DeckConfig | null;
 }
 
-export function createDeckPlugin(options: DeckPluginOptions): Plugin[] {
-	let deckConfig: DeckConfig | null = null;
-	let configPath: string | null = null;
+export interface DeckPluginResult {
+	plugins: Plugin[];
+	getDeckConfig: () => DeckConfig | null;
+}
 
-	return [
+export function createDeckPlugin(options: DeckPluginOptions): DeckPluginResult {
+	const plugins: Plugin[] = [
 		{
 			name: "mnestia:deck",
 			enforce: "pre",
@@ -26,39 +28,31 @@ export function createDeckPlugin(options: DeckPluginOptions): Plugin[] {
 			async load(id) {
 				if (id !== RESOLVED_DECK_ID) return;
 
+				const deckConfig = options.getDeckConfig();
 				if (!deckConfig) {
-					deckConfig = await loadDeckConfig(options.root);
+					throw new Error("Deck config not available");
 				}
 
-				return `export const deckConfig = ${JSON.stringify(deckConfig, null, 2)};`;
-			},
-			configureServer(server) {
-				server.watcher.on("change", async (file) => {
-					if (file.includes("mnestia.config.ts")) {
-						console.log("[mnestia] Config changed, reloading...");
-						deckConfig = null;
-						server.restart();
-					}
-				});
+				// Only export serializable config (no component functions)
+				const serializableConfig = {
+					slides: deckConfig.slides.map((s) => ({
+						id: s.id,
+						index: s.index,
+						filepath: s.filepath,
+						frontmatter: s.frontmatter,
+					})),
+					theme: typeof deckConfig.theme === "string" ? deckConfig.theme : "@mnestia/theme-base",
+					navigation: deckConfig.navigation,
+					aspectRatio: deckConfig.aspectRatio,
+					export: deckConfig.export,
+				};
+
+				return `export const deckConfig = ${JSON.stringify(serializableConfig, null, 2)};`;
 			},
 		},
 	];
-}
 
-async function loadDeckConfig(root: string): Promise<DeckConfig> {
-	const configPath = resolve(root, "mnestia.config.ts");
+	const getDeckConfig = () => options.getDeckConfig();
 
-	try {
-		const mod = await import(configPath);
-		const config = mod.default;
-
-		if (!config) {
-			throw new Error(`mnestia.config.ts must have a default export`);
-		}
-
-		return config;
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		throw new Error(`Failed to load mnestia.config.ts: ${message}`);
-	}
+	return { plugins, getDeckConfig };
 }

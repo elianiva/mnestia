@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import {
 	createRouter,
 	createRootRoute,
@@ -6,13 +6,15 @@ import {
 	Outlet,
 	useNavigate,
 } from "@tanstack/react-router";
+import { deckConfig } from "virtual:mnestia/deck";
+import { slides } from "virtual:mnestia/slides";
 import { DeckProvider } from "./components/deck-provider";
 import { SlideViewer } from "./components/slide-viewer";
 import { NavigationControls } from "./components/navigation-controls";
+import { SlideLoading } from "./components/slide-loading";
 import { useNavigation } from "@mnestia/core";
 import { useDeck } from "./hooks/use-deck";
 import { useDeckContext } from "./components/deck-provider";
-import { deckConfig } from "virtual:mnestia/deck";
 
 const rootRoute = createRootRoute({
 	component: RootComponent,
@@ -22,7 +24,9 @@ function RootComponent() {
 	return (
 		<DeckProvider config={deckConfig}>
 			<div className="h-screen w-screen overflow-hidden bg-background">
-				<Outlet />
+				<Suspense fallback={<SlideLoading />}>
+					<Outlet />
+				</Suspense>
 			</div>
 		</DeckProvider>
 	);
@@ -51,7 +55,7 @@ function IndexComponent() {
 		navigate({ to: "/slide/$number", params: { number: String(slideNumber) } });
 	}, [navigate, slideNumber]);
 
-	return null;
+	return <SlideLoading />;
 }
 
 function SlideComponent() {
@@ -79,7 +83,7 @@ function SlideComponent() {
 		if (slideIndex !== currentSlide) {
 			goToSlide(slideIndex);
 		}
-	}, [number, totalSlides]);
+	}, [number, totalSlides, navigate, currentSlide, goToSlide]);
 
 	useEffect(() => {
 		const currentNumber = currentSlide + 1;
@@ -88,7 +92,7 @@ function SlideComponent() {
 			navigate({ to: "/slide/$number", params: { number: String(currentNumber) } });
 		}
 		localStorage.setItem("mnestia:currentSlide", String(currentSlide));
-	}, [currentSlide, number]);
+	}, [currentSlide, number, navigate]);
 
 	useNavigation({
 		config: config.navigation,
