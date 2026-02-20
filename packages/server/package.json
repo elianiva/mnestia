@@ -3,11 +3,23 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
+  "bin": {
+    "mnestia-server": "./bin/server.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
   "scripts": {
     "dev": "bun run --watch ./src/index.ts",
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
-    "start": "bun run ./dist/index.js",
+    "build": "tsdown",
+    "start": "node ./bin/server.mjs",
     "test": "bun test test/",
     "lint": "oxlint --config ../../oxlint.json .",
     "format": "oxfmt --write .",

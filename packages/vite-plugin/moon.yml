@@ -11,12 +11,22 @@ dependsOn:
     scope: 'build'
 
 tasks:
-  build:
-    command: 'bun run build'
+  # Build task is auto-detected from package.json "build": "tsdown"
+  # Moon runs: pnpm run build (which executes tsdown)
+
+  dev:
+    command: 'pnpm'
+    args:
+      - 'run'
+      - 'dev'
     inputs:
       - '@group(sources)'
       - '@group(configs)'
-    outputs: []
+      - 'tsdown.config.ts'
+    outputs:
+      - 'dist'
+    options:
+      persistent: true
 
   install:
     command: 'bun install'
@@ -26,3 +36,9 @@ tasks:
       - 'node_modules'
     options:
       cache: false
+
+  link:
+    command: 'bun link'
+    description: 'Link package globally for local testing'
+    inputs:
+      - 'package.json'

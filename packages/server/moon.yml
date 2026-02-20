@@ -11,13 +11,29 @@ dependsOn:
     scope: 'build'
 
 tasks:
+  # Build task is auto-detected from package.json "build": "tsdown"
+
+  dev:
+    command: 'bun'
+    args:
+      - 'run'
+      - '--watch'
+      - './src/index.ts'
+    inputs:
+      - '@group(sources)'
+    options:
+      persistent: true
+
   start:
     description: 'Start production server'
-    command: 'bun run start'
+    command: 'node'
+    args:
+      - './bin/server.mjs'
     deps:
       - 'build'
     inputs:
       - 'dist/**/*'
+      - 'bin/**/*'
     preset: 'server'
 
   install:

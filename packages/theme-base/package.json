@@ -4,51 +4,54 @@
   "type": "module",
   "exports": {
     "./setup": {
-      "types": "./src/setup.ts",
-      "import": "./src/setup.ts"
+      "types": "./dist/setup.d.ts",
+      "import": "./dist/setup.js"
     },
     "./components/code-block": {
-      "types": "./src/components/code-block.tsx",
-      "import": "./src/components/code-block.tsx"
+      "types": "./dist/components/code-block.d.ts",
+      "import": "./dist/components/code-block.js"
     },
     "./components/image": {
-      "types": "./src/components/image.tsx",
-      "import": "./src/components/image.tsx"
+      "types": "./dist/components/image.d.ts",
+      "import": "./dist/components/image.js"
     },
     "./components/quote": {
-      "types": "./src/components/quote.tsx",
-      "import": "./src/components/quote.tsx"
+      "types": "./dist/components/quote.d.ts",
+      "import": "./dist/components/quote.js"
     },
     "./components/table": {
-      "types": "./src/components/table.tsx",
-      "import": "./src/components/table.tsx"
+      "types": "./dist/components/table.d.ts",
+      "import": "./dist/components/table.js"
     },
     "./layouts/default": {
-      "types": "./src/layouts/default.tsx",
-      "import": "./src/layouts/default.tsx"
+      "types": "./dist/layouts/default.d.ts",
+      "import": "./dist/layouts/default.js"
     },
     "./layouts/cover": {
-      "types": "./src/layouts/cover.tsx",
-      "import": "./src/layouts/cover.tsx"
+      "types": "./dist/layouts/cover.d.ts",
+      "import": "./dist/layouts/cover.js"
     },
     "./layouts/center": {
-      "types": "./src/layouts/center.tsx",
-      "import": "./src/layouts/center.tsx"
+      "types": "./dist/layouts/center.d.ts",
+      "import": "./dist/layouts/center.js"
     },
     "./layouts/split": {
-      "types": "./src/layouts/split.tsx",
-      "import": "./src/layouts/split.tsx"
+      "types": "./dist/layouts/split.d.ts",
+      "import": "./dist/layouts/split.js"
     },
     "./layouts/grid": {
-      "types": "./src/layouts/grid.tsx",
-      "import": "./src/layouts/grid.tsx"
+      "types": "./dist/layouts/grid.d.ts",
+      "import": "./dist/layouts/grid.js"
     },
-    "./styles/*": "./src/styles/*",
+    "./styles/*": "./dist/styles/*",
     "./package.json": "./package.json"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "echo 'No build needed'",
-    "dev": "echo 'No dev needed'",
+    "build": "tsdown && cp -r src/styles dist/styles",
+    "dev": "tsdown --watch",
     "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
     "format": "oxfmt --write .",
     "typecheck": "tsc --noEmit",

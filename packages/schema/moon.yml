@@ -12,3 +12,9 @@ tasks:
       - 'node_modules'
     options:
       cache: false
+
+  link:
+    command: 'bun link'
+    description: 'Link package globally for local testing'
+    inputs:
+      - 'package.json'

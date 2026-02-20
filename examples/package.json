@@ -1,11 +1,11 @@
 {
   "name": "@mnestia/example-slides",
-  "version": "0.0.1",
-  "private": true,
   "type": "module",
+  "private": true,
+  "version": "0.0.1",
   "scripts": {
-    "build": "echo 'No build needed'",
-    "dev": "echo 'No dev needed'",
+    "dev": "bunx mnestia dev",
+    "build": "bunx mnestia build",
     "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
     "format": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
@@ -13,10 +13,15 @@
   },
   "dependencies": {
     "@mnestia/core": "workspace:*",
-    "@mnestia/schema": "workspace:*",
-    "@mnestia/theme-base": "workspace:*"
+    "@mnestia/theme-base": "workspace:*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@mnestia/cli": "workspace:*",
+    "@mnestia/web": "workspace:*",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0"
   }
 }

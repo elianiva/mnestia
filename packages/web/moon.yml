@@ -11,18 +11,14 @@ dependsOn:
     scope: 'build'
 
 tasks:
-  build:
-    command: 'bun run build'
-    inputs:
-      - '@group(sources)'
-      - '@group(configs)'
-      - 'vite.config.ts'
-    outputs:
-      - 'dist'
+  # Build task is auto-detected from package.json "build": "vite build"
 
   preview:
     description: 'Preview production build'
-    command: 'bun run preview'
+    command: 'pnpm'
+    args:
+      - 'run'
+      - 'preview'
     deps:
       - 'build'
     inputs:

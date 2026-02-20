@@ -7,7 +7,6 @@ import * as path from "node:path";
 import {
   FileSystemError,
   ValidationError,
-  JsonParseError,
   logErrors,
 } from "../utils/error";
 import { VERSION } from "../version";
@@ -187,22 +186,6 @@ export class TemplateService extends Effect.Service<TemplateService>()(
         return targetDir;
       });
 
-      const parsePackageJson = Effect.fn("TemplateService.parsePackageJson")(
-        function* (content: string, path: string) {
-          return yield* Effect.try({
-            try: () => JSON.parse(content) as Record<string, unknown>,
-            catch: (error) =>
-              new JsonParseError({
-                path,
-                message:
-                  error instanceof Error
-                    ? error.message
-                    : "Failed to parse JSON",
-              }),
-          });
-        },
-      );
-
       const scaffold = Effect.fn("TemplateService.scaffold")(function* (
         projectName: string,
         force = false,
@@ -232,7 +215,7 @@ export class TemplateService extends Effect.Service<TemplateService>()(
 
         const pkgPath = path.join(templateDir, "package.json");
         const pkgContent = yield* fs.readFileString(pkgPath);
-        const pkg = yield* parsePackageJson(pkgContent, pkgPath);
+        const pkg = JSON.parse(pkgContent) as Record<string, unknown>;
         pkg.name = projectName === "." ? path.basename(cwd) : projectName;
 
         yield* copyFile(

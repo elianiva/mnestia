@@ -4,10 +4,28 @@ layer: tool
 toolchains:
   default: 'bun'
 
+dependsOn:
+  - id: 'vite-plugin'
+    scope: 'build'
+
 tasks:
+  # Build task is auto-detected from package.json "build": "tsdown"
+
+  dev:
+    command: 'bun'
+    args:
+      - '--watch'
+      - './src/index.ts'
+    inputs:
+      - '@group(sources)'
+    options:
+      persistent: true
+
   run:
     description: 'Run CLI tool'
-    command: 'bun run run'
+    command: 'bun'
+    args:
+      - './src/index.ts'
     inputs:
       - '@group(sources)'
 
@@ -19,3 +37,9 @@ tasks:
       - 'node_modules'
     options:
       cache: false
+
+  link:
+    command: 'bun link'
+    description: 'Link package globally for local testing'
+    inputs:
+      - 'package.json'

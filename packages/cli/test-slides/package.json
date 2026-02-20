@@ -8,13 +8,13 @@
     "build": "mnestia build"
   },
   "dependencies": {
-    "@mnestia/core": "workspace:*",
-    "@mnestia/theme-base": "workspace:*",
+    "@mnestia/core": "^0.0.1",
+    "@mnestia/theme-base": "^0.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@mnestia/cli": "workspace:*",
+    "@mnestia/cli": "^0.0.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0"
   }

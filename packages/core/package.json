@@ -5,54 +5,57 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./define-deck": {
-      "types": "./src/utils/define-deck.ts",
-      "import": "./src/utils/define-deck.ts"
+      "types": "./dist/utils/define-deck.d.ts",
+      "import": "./dist/utils/define-deck.js"
     },
     "./slide": {
-      "types": "./src/utils/slide.ts",
-      "import": "./src/utils/slide.ts"
+      "types": "./dist/utils/slide.d.ts",
+      "import": "./dist/utils/slide.js"
     },
     "./services/deck": {
-      "types": "./src/services/deck-service.ts",
-      "import": "./src/services/deck-service.ts"
+      "types": "./dist/services/deck-service.d.ts",
+      "import": "./dist/services/deck-service.js"
     },
     "./services/theme": {
-      "types": "./src/services/theme-service.ts",
-      "import": "./src/services/theme-service.ts"
+      "types": "./dist/services/theme-service.d.ts",
+      "import": "./dist/services/theme-service.js"
     },
     "./atoms/deck": {
-      "types": "./src/atoms/deck-atom.ts",
-      "import": "./src/atoms/deck-atom.ts"
+      "types": "./dist/atoms/deck-atom.d.ts",
+      "import": "./dist/atoms/deck-atom.js"
     },
     "./atoms/clicks": {
-      "types": "./src/atoms/clicks-atom.ts",
-      "import": "./src/atoms/clicks-atom.ts"
+      "types": "./dist/atoms/clicks-atom.d.ts",
+      "import": "./dist/atoms/clicks-atom.js"
     },
     "./hooks/use-deck": {
-      "types": "./src/hooks/use-deck.ts",
-      "import": "./src/hooks/use-deck.ts"
+      "types": "./dist/hooks/use-deck.d.ts",
+      "import": "./dist/hooks/use-deck.js"
     },
     "./hooks/use-clicks": {
-      "types": "./src/hooks/use-clicks.ts",
-      "import": "./src/hooks/use-clicks.ts"
+      "types": "./dist/hooks/use-clicks.d.ts",
+      "import": "./dist/hooks/use-clicks.js"
     },
     "./hooks/use-navigation": {
-      "types": "./src/hooks/use-navigation.ts",
-      "import": "./src/hooks/use-navigation.ts"
+      "types": "./dist/hooks/use-navigation.d.ts",
+      "import": "./dist/hooks/use-navigation.js"
     },
     "./errors": {
-      "types": "./src/errors/index.ts",
-      "import": "./src/errors/index.ts"
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js"
     },
     "./package.json": "./package.json"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "echo 'No build needed'",
-    "dev": "echo 'No dev needed'",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
     "format": "oxfmt --write .",
     "typecheck": "tsc --noEmit",

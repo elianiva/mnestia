@@ -8,7 +8,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // CLI package root (packages/cli)
-export const cliRoot = resolve(__dirname, "..", "..");
+// Handle both source (src/) and bundled (dist/) locations
+const isDist = __dirname.endsWith("dist") || __dirname.includes("dist/");
+export const cliRoot = isDist
+	? resolve(__dirname, "..") // dist/ -> packages/cli
+	: resolve(__dirname, "..", ".."); // src/utils/ -> packages/cli
 
 /**
  * Resolve package root using multiple strategies:

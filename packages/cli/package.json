@@ -3,14 +3,25 @@
   "version": "0.0.1",
   "private": true,
   "bin": {
-    "mnestia": "./dist/index.js",
-    "create-mnestia": "./dist/index.js"
+    "mnestia": "./bin/mnestia.mjs",
+    "create-mnestia": "./bin/mnestia.mjs"
   },
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "bin",
+    "dist",
+    "template"
+  ],
   "scripts": {
     "dev": "bun --watch ./src/index.ts",
     "run": "bun ./src/index.ts",
-    "build": "bun build ./src/index.ts --outdir=./dist --target=bun --minify",
+    "build": "tsdown",
     "lint": "oxlint --config ../../oxlint.json --ignore-pattern 'dist/**' .",
     "format": "oxfmt --write .",
     "typecheck": "tsc --noEmit",

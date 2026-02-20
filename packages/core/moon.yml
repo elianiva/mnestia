@@ -3,7 +3,27 @@ layer: library
 toolchains:
   default: 'bun'
 
+dependsOn:
+  - id: 'schema'
+    scope: 'build'
+
 tasks:
+  # Build task is auto-detected from package.json "build": "tsdown"
+
+  dev:
+    command: 'pnpm'
+    args:
+      - 'run'
+      - 'dev'
+    inputs:
+      - '@group(sources)'
+      - '@group(configs)'
+      - 'tsdown.config.ts'
+    outputs:
+      - 'dist'
+    options:
+      persistent: true
+
   install:
     command: 'bun install'
     inputs:
@@ -12,3 +32,9 @@ tasks:
       - 'node_modules'
     options:
       cache: false
+
+  link:
+    command: 'bun link'
+    description: 'Link package globally for local testing'
+    inputs:
+      - 'package.json'
