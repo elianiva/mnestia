@@ -18,7 +18,7 @@ export { slide } from "./utils/slide.js";
 
 export { useDeck } from "./hooks/use-deck.js";
 export { useClicks } from "./hooks/use-clicks.js";
-export { useNavigation } from "./hooks/use-navigation.js";
+export { useNavigation, useNavigation as useKeyboardNavigation } from "./hooks/use-navigation.js";
 
 export {
 	SlideNotFoundError,

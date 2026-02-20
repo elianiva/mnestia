@@ -10,4 +10,5 @@ projects:
   web: 'packages/web'
   theme-base: 'packages/theme-base'
   cli: 'packages/cli'
-  example-slides: 'packages/example-slides'
+  vite-plugin: 'packages/vite-plugin'
+  test-deck: 'test-deck'

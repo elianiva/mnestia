@@ -13,16 +13,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@effect-atom/atom-react": "^0.5.0",
     "@mnestia/core": "workspace:*",
     "@mnestia/schema": "workspace:*",
     "@radix-ui/react-slider": "^1.2.0",
-    "@tailwindcss/vite": "^4.1.18",
-    "@tanstack/react-devtools": "^0.9.5",
     "@tanstack/react-router": "^1.132.0",
-    "@tanstack/react-router-devtools": "^1.132.0",
-    "@tanstack/react-router-ssr-query": "^1.131.7",
-    "@tanstack/react-start": "^1.132.0",
-    "@tanstack/router-plugin": "^1.132.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.572.0",
@@ -30,12 +25,12 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwind-merge": "^3.4.1",
-    "tailwindcss": "^4.1.18",
-    "vite-tsconfig-paths": "^6.1.1"
+    "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
     "@mnestia/theme-base": "workspace:*",
-    "@tanstack/devtools-vite": "^0.5.1",
+    "@mnestia/vite-plugin": "workspace:*",
+    "@tailwindcss/vite": "^4.1.18",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^25.2.3",
