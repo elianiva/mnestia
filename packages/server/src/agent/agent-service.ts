@@ -1,37 +1,46 @@
 import { Effect, Exit, ManagedRuntime } from "effect";
+import * as v from "valibot";
 import type { ServerDeckState } from "@mnestia/schema";
+import { SlideCommandSchema, type SlideCommand } from "@mnestia/schema";
 import { SlideService } from "../domain/slide-service";
 import { formatEffectCause } from "../ws/effect-runtime";
 import { captureEffectError } from "../config/sentry-capture";
-import {
-  addSlideDef,
-  removeSlideDef,
-  updateSlideDef,
-  reorderSlidesDef,
-  changeCurrentSlideDef,
-} from "./agent-tools";
 
-interface ToolResult {
-  success: boolean;
-  slideCount: number;
-  currentSlide: number;
+// ── Command Parsing ───────────────────────────────────────────────
+
+const JSON_BLOCK_RE = /```json\s*\n([\s\S]*?)```/g;
+
+/**
+ * Extract SlideCommand objects from AI text response.
+ * Looks for ```json fenced blocks, validates each against SlideCommandSchema.
+ */
+export function parseSlideCommands(text: string): SlideCommand[] {
+  const commands: SlideCommand[] = [];
+
+  for (const match of text.matchAll(JSON_BLOCK_RE)) {
+    const raw = match[1]?.trim();
+    if (!raw) continue;
+
+    try {
+      const parsed = JSON.parse(raw);
+      const result = v.safeParse(SlideCommandSchema, parsed);
+      if (result.success) {
+        commands.push(result.output);
+      }
+    } catch {
+      // Skip malformed JSON blocks
+    }
+  }
+
+  return commands;
 }
 
-function stateToResult(state: ServerDeckState): ToolResult {
-  return {
-    success: true,
-    slideCount: state.slides.length,
-    currentSlide: state.currentSlide,
-  };
-}
+// ── Command Execution ─────────────────────────────────────────────
 
-function failureResult(): ToolResult {
-  return {
-    success: false,
-    slideCount: 0,
-    currentSlide: 0,
-  };
-}
+export type BroadcastFn = (
+  deckId: string,
+  state: ServerDeckState
+) => void;
 
 async function runServiceEffect<A, E>(
   effect: Effect.Effect<A, E, SlideService>,
@@ -43,137 +52,51 @@ async function runServiceEffect<A, E>(
     return exit.value;
   }
 
-  // Log the error instead of silently swallowing it
   const errorMessage = formatEffectCause(exit.cause);
-  // eslint-disable-next-line no-console
-  console.error("[agent-service] Effect execution failed:", errorMessage);
+
+  // Log + capture via Effect-aware utilities
+  Effect.runSync(
+    Effect.logError("Effect execution failed", { error: errorMessage })
+  );
   captureEffectError(exit.cause);
 
   return undefined;
 }
 
-export type BroadcastFn = (
-  deckId: string,
-  state: ServerDeckState
-) => void;
-
-export function createServerTools(
+/**
+ * Execute a list of SlideCommands via SlideService, broadcast results.
+ */
+export async function executeSlideCommands(
+  commands: SlideCommand[],
   runtime: ManagedRuntime.ManagedRuntime<SlideService, never>,
   broadcast: BroadcastFn
-) {
-  const addSlide = addSlideDef.server(
-    async ({ deckId, content, layout, notes, position }) => {
-      const effect = Effect.gen(function* () {
-        const service = yield* SlideService;
-        return yield* service.addSlide(
-          deckId,
-          { content, layout, notes },
-          position
-        );
-      }).pipe(
-        Effect.tap(() => Effect.annotateCurrentSpan("tool.name", "add_slide")),
-        Effect.tap(() => Effect.annotateCurrentSpan("deck.id", deckId)),
-        Effect.withSpan("agent.tool.add_slide")
-      );
+): Promise<{ executed: number; failed: number }> {
+  let executed = 0;
+  let failed = 0;
 
-      const state = await runServiceEffect(effect, runtime);
-      if (!state) return failureResult();
+  for (const command of commands) {
+    const effect = Effect.gen(function* () {
+      const service = yield* SlideService;
+      return yield* service.executeCommand(command);
+    }).pipe(
+      Effect.tap(() =>
+        Effect.annotateCurrentSpan("tool.name", command.type)
+      ),
+      Effect.tap(() =>
+        Effect.annotateCurrentSpan("deck.id", command.deckId)
+      ),
+      Effect.withSpan(`agent.tool.${command.type.toLowerCase()}`)
+    );
 
-      broadcast(deckId, state);
-      return stateToResult(state);
+    const state = await runServiceEffect(effect, runtime);
+
+    if (state) {
+      broadcast(command.deckId, state);
+      executed++;
+    } else {
+      failed++;
     }
-  );
+  }
 
-  const removeSlide = removeSlideDef.server(
-    async ({ deckId, slideIndex }) => {
-      const effect = Effect.gen(function* () {
-        const service = yield* SlideService;
-        return yield* service.removeSlide(deckId, slideIndex);
-      }).pipe(
-        Effect.tap(() => Effect.annotateCurrentSpan("tool.name", "remove_slide")),
-        Effect.tap(() => Effect.annotateCurrentSpan("deck.id", deckId)),
-        Effect.tap(() => Effect.annotateCurrentSpan("slide.index", slideIndex)),
-        Effect.withSpan("agent.tool.remove_slide")
-      );
-
-      const state = await runServiceEffect(effect, runtime);
-      if (!state) return failureResult();
-
-      broadcast(deckId, state);
-      return stateToResult(state);
-    }
-  );
-
-  const updateSlide = updateSlideDef.server(
-    async ({ deckId, slideIndex, content, layout, notes }) => {
-      const effect = Effect.gen(function* () {
-        const service = yield* SlideService;
-        return yield* service.updateSlide(deckId, slideIndex, {
-          content,
-          layout,
-          notes,
-        });
-      }).pipe(
-        Effect.tap(() => Effect.annotateCurrentSpan("tool.name", "update_slide")),
-        Effect.tap(() => Effect.annotateCurrentSpan("deck.id", deckId)),
-        Effect.tap(() => Effect.annotateCurrentSpan("slide.index", slideIndex)),
-        Effect.withSpan("agent.tool.update_slide")
-      );
-
-      const state = await runServiceEffect(effect, runtime);
-      if (!state) return failureResult();
-
-      broadcast(deckId, state);
-      return stateToResult(state);
-    }
-  );
-
-  const reorderSlides = reorderSlidesDef.server(
-    async ({ deckId, fromIndex, toIndex }) => {
-      const effect = Effect.gen(function* () {
-        const service = yield* SlideService;
-        return yield* service.reorderSlides(deckId, fromIndex, toIndex);
-      }).pipe(
-        Effect.tap(() => Effect.annotateCurrentSpan("tool.name", "reorder_slides")),
-        Effect.tap(() => Effect.annotateCurrentSpan("deck.id", deckId)),
-        Effect.tap(() => Effect.annotateCurrentSpan("slide.from_index", fromIndex)),
-        Effect.tap(() => Effect.annotateCurrentSpan("slide.to_index", toIndex)),
-        Effect.withSpan("agent.tool.reorder_slides")
-      );
-
-      const state = await runServiceEffect(effect, runtime);
-      if (!state) return failureResult();
-
-      broadcast(deckId, state);
-      return stateToResult(state);
-    }
-  );
-
-  const changeCurrentSlide = changeCurrentSlideDef.server(
-    async ({ deckId, slideIndex }) => {
-      const effect = Effect.gen(function* () {
-        const service = yield* SlideService;
-        return yield* service.changeCurrentSlide(deckId, slideIndex);
-      }).pipe(
-        Effect.tap(() => Effect.annotateCurrentSpan("tool.name", "change_current_slide")),
-        Effect.tap(() => Effect.annotateCurrentSpan("deck.id", deckId)),
-        Effect.tap(() => Effect.annotateCurrentSpan("slide.index", slideIndex)),
-        Effect.withSpan("agent.tool.change_current_slide")
-      );
-
-      const state = await runServiceEffect(effect, runtime);
-      if (!state) return failureResult();
-
-      broadcast(deckId, state);
-      return stateToResult(state);
-    }
-  );
-
-  return [
-    addSlide,
-    removeSlide,
-    updateSlide,
-    reorderSlides,
-    changeCurrentSlide,
-  ] as const;
+  return { executed, failed };
 }

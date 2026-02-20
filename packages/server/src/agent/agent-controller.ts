@@ -1,26 +1,26 @@
 import { Elysia } from "elysia";
-import { chat, toServerSentEventsResponse, maxIterations } from "@tanstack/ai";
-import { createOpenaiChat } from "@tanstack/ai-openai";
-import { Effect, ManagedRuntime, Option, Redacted } from "effect";
+import { Effect, ManagedRuntime, Option } from "effect";
 import * as Sentry from "@sentry/bun";
+import { SLIDE_TOOL_DESCRIPTIONS } from "@mnestia/schema";
 import type { ServerDeckState } from "@mnestia/schema";
 import type { SlideService } from "../domain/slide-service";
 import type { DeckStateInternal } from "../domain/slide-store";
 import type { AppConfig } from "../config/app-config";
 import { broadcastToClients } from "../ws/effect-runtime";
-import { createServerTools, type BroadcastFn } from "./agent-service";
+import {
+  parseSlideCommands,
+  executeSlideCommands,
+  type BroadcastFn,
+} from "./agent-service";
+import {
+  PiRpcClient,
+  type PiRpcEvent,
+  type PiRpcClientOptions,
+} from "./pi-rpc-client";
 
 const SYSTEM_PROMPT = `You are an AI assistant that helps users create and manage presentation slide decks.
 
-You have access to tools that let you:
-- Add new slides to a deck
-- Remove slides from a deck
-- Update the content, layout, or notes of existing slides
-- Reorder slides within a deck
-- Navigate to a specific slide
-
-When the user asks you to modify their presentation, use the appropriate tools.
-Always confirm what you did after making changes.
+${SLIDE_TOOL_DESCRIPTIONS}
 
 Guidelines:
 - Slide indices are 0-based
@@ -51,6 +51,31 @@ function buildBroadcast(
   };
 }
 
+// ── Singleton Pi RPC client (lazy init) ───────────────────────────
+
+let piClient: PiRpcClient | null = null;
+
+function getOrCreateClient(config: AppConfig): PiRpcClient {
+  if (piClient?.isAlive) return piClient;
+
+  const options: PiRpcClientOptions = {};
+  if (Option.isSome(config.piProvider)) {
+    options.provider = config.piProvider.value;
+  }
+  if (Option.isSome(config.piModel)) {
+    options.model = config.piModel.value;
+  }
+
+  piClient = new PiRpcClient(options);
+  return piClient;
+}
+
+// ── SSE helpers ───────────────────────────────────────────────────
+
+function sseEncode(event: string, data: string): string {
+  return `event: ${event}\ndata: ${data}\n\n`;
+}
+
 export const agentController = new Elysia({ name: "agent-controller" })
   .post("/agent/chat", async (ctx) => {
     return Sentry.startSpan(
@@ -58,71 +83,104 @@ export const agentController = new Elysia({ name: "agent-controller" })
         name: "agent.chat",
         op: "ai.chat",
       },
-      (span) => {
+      async (span) => {
         const { messages, deckId } = ctx.body as {
           messages: Array<{ role: string; content: string }>;
           deckId: string;
         };
 
         span.setAttribute("deck.id", deckId ?? "unknown");
-        span.setAttribute("ai.model", "gpt-4o");
         span.setAttribute("message.count", messages.length);
 
         const { slideStore: storeMap, slideRuntime: runtime, appConfig } =
           ctx as unknown as ControllerContext;
 
-        // Build broadcast function
         const broadcast = buildBroadcast(storeMap);
+        const client = getOrCreateClient(appConfig);
 
-        // Create server tools with the shared runtime (no per-request Layer rebuild)
-        const tools = createServerTools(runtime, broadcast);
+        // Build the full prompt with system context
+        const contextLine = deckId
+          ? `\nThe user is currently working on deck "${deckId}".`
+          : "";
 
-        // Check for API key via Effect Config (Redacted + Option)
-        if (Option.isNone(appConfig.openaiApiKey)) {
-          span.setStatus({ code: 2, message: "OPENAI_API_KEY not configured" });
-          return new Response(
-            JSON.stringify({
-              error: "OPENAI_API_KEY not configured",
-              message:
-                "Set the OPENAI_API_KEY environment variable to enable AI features.",
-            }),
-            {
-              status: 503,
-              headers: { "Content-Type": "application/json" },
+        const lastUserMessage =
+          messages.filter((m) => m.role === "user").at(-1)?.content ?? "";
+
+        const fullPrompt = `${SYSTEM_PROMPT}${contextLine}\n\n${lastUserMessage}`;
+
+        // Stream response as SSE
+        const stream = new ReadableStream({
+          async start(controller) {
+            let fullText = "";
+
+            const unsubscribe = client.onEvent((event: PiRpcEvent) => {
+              if (event.type === "message_update") {
+                const delta = event.assistantMessageEvent as
+                  | { type: string; delta?: string }
+                  | undefined;
+
+                if (delta?.type === "text_delta" && delta.delta) {
+                  fullText += delta.delta;
+                  controller.enqueue(
+                    sseEncode(
+                      "text",
+                      JSON.stringify({ content: delta.delta })
+                    )
+                  );
+                }
+              }
+
+              if (event.type === "agent_end") {
+                // Extract commands from full response, execute them
+                const commands = parseSlideCommands(fullText);
+
+                if (commands.length > 0) {
+                  executeSlideCommands(commands, runtime, broadcast)
+                    .then((result) => {
+                      controller.enqueue(
+                        sseEncode(
+                          "commands",
+                          JSON.stringify(result)
+                        )
+                      );
+                      controller.enqueue(sseEncode("done", "{}"));
+                      controller.close();
+                    })
+                    .catch(() => {
+                      controller.enqueue(sseEncode("done", "{}"));
+                      controller.close();
+                    });
+                } else {
+                  controller.enqueue(sseEncode("done", "{}"));
+                  controller.close();
+                }
+
+                unsubscribe();
+              }
+            });
+
+            // Send prompt to Pi
+            const resp = await client.prompt(fullPrompt);
+            if (!resp.success) {
+              controller.enqueue(
+                sseEncode(
+                  "error",
+                  JSON.stringify({ error: resp.error })
+                )
+              );
+              controller.close();
+              unsubscribe();
             }
-          );
-        }
-
-        const apiKey = Redacted.value(appConfig.openaiApiKey.value);
-
-        // Build context-aware system prompt
-        const contextPrompt = deckId
-          ? `${SYSTEM_PROMPT}\n\nThe user is currently working on deck "${deckId}".`
-          : SYSTEM_PROMPT;
-
-        // Separate system messages from user/assistant messages
-        const chatMessages = messages
-          .filter((m) => m.role !== "system")
-          .map((m) => ({
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          }));
-
-        // Collect any inline system messages into systemPrompts
-        const inlineSystemPrompts = messages
-          .filter((m) => m.role === "system")
-          .map((m) => m.content);
-
-        // Create streaming chat with tools
-        const stream = chat({
-          adapter: createOpenaiChat("gpt-4o", apiKey),
-          messages: chatMessages,
-          tools: [...tools],
-          systemPrompts: [contextPrompt, ...inlineSystemPrompts],
-          agentLoopStrategy: maxIterations(10),
+          },
         });
 
-        return toServerSentEventsResponse(stream);
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          },
+        });
       }
     );
   });

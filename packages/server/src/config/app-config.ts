@@ -1,10 +1,11 @@
-import { Config, Effect, type Option, type Redacted } from "effect";
+import { Config, Effect, type Option } from "effect";
 import { loadSentryConfig, type SentryConfig } from "./sentry-config";
 
 export interface AppConfig {
   readonly port: number;
   readonly host: string;
-  readonly openaiApiKey: Option.Option<Redacted.Redacted<string>>;
+  readonly piProvider: Option.Option<string>;
+  readonly piModel: Option.Option<string>;
   readonly sentry: SentryConfig;
 }
 
@@ -13,10 +14,13 @@ export const loadAppConfig = Effect.gen(function* () {
   const host = yield* Config.string("HOST").pipe(
     Config.withDefault("localhost")
   );
-  const openaiApiKey = yield* Config.option(
-    Config.redacted(Config.string("OPENAI_API_KEY"))
+  const piProvider = yield* Config.option(
+    Config.string("PI_PROVIDER")
+  );
+  const piModel = yield* Config.option(
+    Config.string("PI_MODEL")
   );
   const sentry = yield* loadSentryConfig;
 
-  return { port, host, openaiApiKey, sentry } satisfies AppConfig;
+  return { port, host, piProvider, piModel, sentry } satisfies AppConfig;
 });

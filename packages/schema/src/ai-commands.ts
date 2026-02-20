@@ -1,7 +1,6 @@
 import * as v from "valibot";
-import { toStandardJsonSchema } from "@valibot/to-json-schema";
 
-// ── Command Schemas (used by SlideCommandSchema) ──────────────────
+// ── Command Schemas ───────────────────────────────────────────────
 
 const AddSlideCommandSchema = v.object({
   type: v.literal("ADD_SLIDE"),
@@ -52,95 +51,26 @@ export const SlideCommandSchema = v.variant("type", [
 
 export type SlideCommand = v.InferOutput<typeof SlideCommandSchema>;
 
-// ── AI Tool JSON Schemas (Standard JSON Schema, ready to use) ─────
+// ── Tool Descriptions (injected into AI system prompt) ────────────
 
-export const addSlideInputSchema = toStandardJsonSchema(
-  v.object({
-    deckId: v.pipe(
-      v.string(),
-      v.description("The ID of the deck to add a slide to")
-    ),
-    content: v.optional(
-      v.pipe(v.string(), v.description("The content of the slide"))
-    ),
-    layout: v.optional(
-      v.pipe(v.string(), v.description("The layout template to use"))
-    ),
-    notes: v.optional(
-      v.pipe(v.string(), v.description("Speaker notes for the slide"))
-    ),
-    position: v.optional(
-      v.pipe(
-        v.number(),
-        v.description("Position to insert the slide at (0-based index)")
-      )
-    ),
-  })
-);
+export const SLIDE_TOOL_DESCRIPTIONS = `You can manipulate slides by outputting a JSON command block wrapped in \`\`\`json fences.
 
-export const removeSlideInputSchema = toStandardJsonSchema(
-  v.object({
-    deckId: v.pipe(v.string(), v.description("The ID of the deck")),
-    slideIndex: v.pipe(
-      v.number(),
-      v.description("The index of the slide to remove (0-based)")
-    ),
-  })
-);
+Available commands:
 
-export const updateSlideInputSchema = toStandardJsonSchema(
-  v.object({
-    deckId: v.pipe(v.string(), v.description("The ID of the deck")),
-    slideIndex: v.pipe(
-      v.number(),
-      v.description("The index of the slide to update (0-based)")
-    ),
-    content: v.optional(
-      v.pipe(v.string(), v.description("New content for the slide"))
-    ),
-    layout: v.optional(
-      v.pipe(
-        v.string(),
-        v.description("New layout template for the slide")
-      )
-    ),
-    notes: v.optional(
-      v.pipe(
-        v.string(),
-        v.description("New speaker notes for the slide")
-      )
-    ),
-  })
-);
+1. ADD_SLIDE — Add a new slide
+   { "type": "ADD_SLIDE", "deckId": "<id>", "slide": { "content?": "string", "layout?": "string", "notes?": "string" }, "position?": number }
 
-export const reorderSlidesInputSchema = toStandardJsonSchema(
-  v.object({
-    deckId: v.pipe(v.string(), v.description("The ID of the deck")),
-    fromIndex: v.pipe(
-      v.number(),
-      v.description("The current index of the slide to move")
-    ),
-    toIndex: v.pipe(
-      v.number(),
-      v.description("The target index to move the slide to")
-    ),
-  })
-);
+2. REMOVE_SLIDE — Remove a slide by index (0-based)
+   { "type": "REMOVE_SLIDE", "deckId": "<id>", "slideIndex": number }
 
-export const changeCurrentSlideInputSchema = toStandardJsonSchema(
-  v.object({
-    deckId: v.pipe(v.string(), v.description("The ID of the deck")),
-    slideIndex: v.pipe(
-      v.number(),
-      v.description("The index of the slide to navigate to (0-based)")
-    ),
-  })
-);
+3. UPDATE_SLIDE — Update content/layout/notes of an existing slide
+   { "type": "UPDATE_SLIDE", "deckId": "<id>", "slideIndex": number, "content?": "string", "layout?": "string", "notes?": "string" }
 
-export const toolResultSchema = toStandardJsonSchema(
-  v.object({
-    success: v.boolean(),
-    slideCount: v.number(),
-    currentSlide: v.number(),
-  })
-);
+4. REORDER_SLIDES — Move a slide from one position to another
+   { "type": "REORDER_SLIDES", "deckId": "<id>", "fromIndex": number, "toIndex": number }
+
+5. CHANGE_CURRENT_SLIDE — Navigate to a specific slide
+   { "type": "CHANGE_CURRENT_SLIDE", "deckId": "<id>", "slideIndex": number }
+
+Output exactly one JSON command per code block. You may output multiple code blocks for multiple operations.
+Always confirm what you did after making changes.`;

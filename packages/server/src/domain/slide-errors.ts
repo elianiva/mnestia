@@ -4,6 +4,7 @@ export class DeckNotFoundError extends Data.TaggedError(
   "DeckNotFoundError"
 )<{
   readonly deckId: string;
+  readonly message: string;
   readonly cause?: unknown;
 }> {}
 
@@ -12,6 +13,7 @@ export class SlideNotFoundError extends Data.TaggedError(
 )<{
   readonly deckId: string;
   readonly slideIndex: number;
+  readonly message: string;
   readonly cause?: unknown;
 }> {}
 
@@ -21,6 +23,7 @@ export class InvalidSlideIndexError extends Data.TaggedError(
   readonly deckId: string;
   readonly slideIndex: number;
   readonly totalSlides: number;
+  readonly message: string;
   readonly cause?: unknown;
 }> {}
 
@@ -30,6 +33,7 @@ export class SlideOperationError extends Data.TaggedError(
   readonly operation: string;
   readonly deckId: string;
   readonly reason: string;
+  readonly message: string;
   readonly cause?: unknown;
 }> {}
 

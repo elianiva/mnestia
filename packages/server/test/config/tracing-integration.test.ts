@@ -6,7 +6,7 @@ import {
   type ReadableSpan,
 } from "@opentelemetry/sdk-trace-base";
 import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
-import { SlideServiceLive, createSlideStoreLive } from "../../src/domain/slide-layer";
+import { createSlideStoreLive } from "../../src/domain/slide-layer";
 import { SlideService } from "../../src/domain/slide-service";
 import type { DeckStateInternal } from "../../src/domain/slide-store";
 
@@ -37,7 +37,7 @@ class CollectingSpanExporter implements SpanExporter {
 function createTracedTestRuntime(exporter: CollectingSpanExporter) {
   const storeMap = new Map<string, DeckStateInternal>();
   const storeLayer = createSlideStoreLive(storeMap);
-  const serviceLayer = SlideServiceLive.pipe(Layer.provide(storeLayer));
+  const serviceLayer = SlideService.Default.pipe(Layer.provide(storeLayer));
 
   const tracingLayer = NodeSdk.layer(() => ({
     resource: {

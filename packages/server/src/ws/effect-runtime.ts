@@ -1,7 +1,7 @@
 import { Cause, Effect, Either, ManagedRuntime, Layer } from "effect";
 import type { WsOutgoingMessage } from "@mnestia/schema";
-import { SlideServiceLive, createSlideStoreLive } from "../domain/slide-layer";
-import type { SlideService } from "../domain/slide-service";
+import { createSlideStoreLive } from "../domain/slide-layer";
+import { SlideService } from "../domain/slide-service";
 import type { DeckStateInternal } from "../domain/slide-store";
 
 export function createSlideRuntime(
@@ -9,7 +9,7 @@ export function createSlideRuntime(
   tracingLayer: Layer.Layer<never>
 ): ManagedRuntime.ManagedRuntime<SlideService, never> {
   const storeLayer = createSlideStoreLive(storeMap);
-  const serviceLayer = SlideServiceLive.pipe(Layer.provide(storeLayer));
+  const serviceLayer = SlideService.Default.pipe(Layer.provide(storeLayer));
 
   // Merge tracing into the service layer so all Effect spans are exported
   const fullLayer = Layer.merge(serviceLayer, tracingLayer);
@@ -31,22 +31,14 @@ function formatDomainError(error: unknown): string {
     return String(error);
   }
 
-  const tagged = error as { _tag: string; [key: string]: unknown };
+  const tagged = error as { _tag: string; message?: string };
 
-  switch (tagged._tag) {
-    case "DeckNotFoundError":
-      return `Deck not found: ${String(tagged.deckId)}`;
-    case "SlideNotFoundError":
-      return `Slide not found at index ${String(tagged.slideIndex)} in deck ${String(tagged.deckId)}`;
-    case "InvalidSlideIndexError":
-      return `Invalid slide index ${String(tagged.slideIndex)} (total: ${String(tagged.totalSlides)}) in deck ${String(tagged.deckId)}`;
-    case "SlideOperationError":
-      return `Slide operation failed: ${String(tagged.reason)}`;
-    case "WsMessageError":
-      return String(tagged.message);
-    default:
-      return `Error [${tagged._tag}]`;
+  // All domain errors now have a message field
+  if (tagged.message) {
+    return tagged.message;
   }
+
+  return `Error [${tagged._tag}]`;
 }
 
 // ── WebSocket Effect Helpers ──────────────────────────────────────

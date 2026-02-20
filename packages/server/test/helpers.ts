@@ -1,5 +1,5 @@
 import { expect } from "bun:test";
-import { Effect, Exit, Cause, Option, Layer } from "effect";
+import { Effect, Exit, Cause, Option, Layer, Context } from "effect";
 import { Elysia, type AnyElysia } from "elysia";
 import type { DeckStateInternal } from "../src/domain/slide-store";
 import type { AppConfig } from "../src/config/app-config";
@@ -44,7 +44,8 @@ export function createTestConfig(
   return {
     port: 0,
     host: "localhost",
-    openaiApiKey: Option.none(),
+    piProvider: Option.none(),
+    piModel: Option.none(),
     sentry: DEFAULT_SENTRY_CONFIG,
     ...overrides,
   };
@@ -177,7 +178,7 @@ export function expectFailure<E>(exit: Exit.Exit<unknown, E>): void {
  * ```
  */
 export function runWithService<A, E>(
-  fn: (service: SlideService["Type"]) => Effect.Effect<A, E, never>,
+  fn: (service: Context.Tag.Service<typeof SlideService>) => Effect.Effect<A, E, never>,
   layer: Layer.Layer<SlideService>
 ): Promise<Exit.Exit<A, E>> {
   return Effect.runPromiseExit(

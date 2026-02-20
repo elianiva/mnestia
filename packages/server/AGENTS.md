@@ -2,7 +2,7 @@
 
 Backend realtime slide system built with **Elysia (REST + WebSocket)** inside a **Moon-managed monorepo**, integrating:
 
-- TanStack AI (agent layer)
+- Pi RPC (AI agent layer via subprocess)
 - Effect (functional core / domain logic discipline)
 
 Deck management via REST is intentionally skipped for now.
@@ -16,7 +16,7 @@ Active:
 
 - WebSocket realtime slide synchronization
 - Shared in-memory state using Elysia `.state()`
-- AI Agent integration (TanStack AI)
+- AI Agent integration (Pi RPC subprocess)
 - Effect-based domain architecture
 - SPA-compatible architecture
 
@@ -59,16 +59,16 @@ Moon handles:
 
 # 3. External Architectural References
 
-## TanStack AI
+## Pi RPC
 
-https://tanstack.com/ai/latest/docs/getting-started/overview
+Pi is used as an AI coding agent via its RPC mode (`pi --mode rpc --no-session`).
+Communication: JSON lines over stdin/stdout of a spawned child process.
 
 Used for:
 
 - Agent-based chat interaction
-- Tool-driven AI architecture
-- Structured AI outputs
-- Streaming-compatible design
+- Structured AI outputs (SlideCommand JSON)
+- Streaming text deltas back to client via SSE
 
 ---
 
@@ -121,15 +121,17 @@ Broadcast to Clients
 
 ## B. AI Agent Slide Manipulation
 
-Chat UI (TanStack AI)
+Chat UI
     ↓
-POST /agent
+POST /agent/chat
     ↓
 Agent Controller
     ↓
-AI Processing Layer
+Pi RPC subprocess (pi --mode rpc --no-session)
     ↓
-Structured Slide Command
+Structured SlideCommand JSON (```json fenced blocks)
+    ↓
+parseSlideCommands → executeSlideCommands
     ↓
 Slide Service (Effect)
     ↓
@@ -220,35 +222,35 @@ WebSocket must NOT:
 
 ---
 
-# 7. AI Agent Integration (TanStack AI)
+# 7. AI Agent Integration (Pi RPC)
 
-Reference:
+The AI agent runs as a Pi subprocess in RPC mode.
+`PiRpcClient` manages the child process lifecycle (spawn, stdin/stdout JSON lines, kill).
 
-https://tanstack.com/ai/latest/docs/getting-started/overview
+Architecture:
 
-Purpose:
+- `pi-rpc-client.ts` — spawns `pi --mode rpc --no-session`, sends/receives JSON lines
+- `agent-service.ts` — parses SlideCommand JSON from agent text, executes via SlideService
+- `agent-controller.ts` — POST /agent/chat endpoint, streams text deltas as SSE, extracts commands on agent_end
 
-- Modify slides via natural language
-- Convert chat into structured slide commands
-- Support tool-driven AI mutation
+Config: `PI_PROVIDER` and `PI_MODEL` env vars (optional, uses pi defaults).
 
-Slides structure can remain minimal placeholder.
-
-Agent must output structured command format defined in `../schema`.
+Agent must output structured command format defined in `../schema` as ```json fenced blocks.
 
 ---
 
 # 8. Agent Flow Specification
 
-1. Client sends chat message
-2. `/agent` endpoint receives request
-3. Agent layer invokes AI model
-4. AI produces structured slide command
-5. Validate against shared schema
-6. Execute Slide Service Effect
-7. Update state
-8. Broadcast via WebSocket
-9. Return structured result
+1. Client sends chat message to POST /agent/chat
+2. Agent controller builds system prompt with SLIDE_TOOL_DESCRIPTIONS + deck context
+3. Pi RPC subprocess receives prompt
+4. Pi streams text_delta events → SSE to client
+5. On agent_end: extract ```json blocks from full response text
+6. Validate each against SlideCommandSchema (valibot)
+7. Execute via SlideService (Effect)
+8. Update state
+9. Broadcast via WebSocket
+10. Send SSE command execution results + done event
 
 Agent must not:
 
@@ -310,7 +312,7 @@ src/
   agent/
     agent-controller.ts
     agent-service.ts
-    agent-tools.ts
+    pi-rpc-client.ts
 ```
 
 Shared contracts:

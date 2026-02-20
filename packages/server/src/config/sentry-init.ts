@@ -18,7 +18,7 @@ export function initSentry(
             dsn: Redacted.value(redactedDsn),
             environment: config.environment,
             tracesSampleRate: config.tracesSampleRate,
-            sendDefaultPii: true,
+            sendDefaultPii: false,
             // Let Effect/OpenTelemetry manage tracing, not Sentry auto-instrumentation
             skipOpenTelemetrySetup: true,
           });
