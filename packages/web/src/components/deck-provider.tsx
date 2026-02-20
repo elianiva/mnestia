@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { DeckConfig } from "@mnestia/schema/deck";
 import type { SlideFrontmatter } from "@mnestia/schema/slide";
 import type { ThemeModule } from "@mnestia/schema/theme";
 import { createDeckAtom, type DeckAtom } from "@mnestia/core/atoms/deck";
+import { defaultTheme, getTheme } from "virtual:mnestia/themes";
 
 export interface SerializableSlide {
 	id: string;
@@ -32,61 +33,24 @@ export interface DeckProviderProps {
 	children: ReactNode;
 }
 
-async function loadTheme(theme: string | ThemeModule): Promise<ThemeModule> {
-	if (typeof theme !== "string") {
-		return theme;
+function loadTheme(themeName: string | ThemeModule): ThemeModule {
+	if (typeof themeName !== "string") {
+		return themeName;
 	}
 
-	try {
-		const themeModule = await import(/* @vite-ignore */ theme);
-		const themeObj: ThemeModule = themeModule.default || themeModule;
+	const themeObj = getTheme(themeName);
 
-		if (!themeObj.layouts || !themeObj.components) {
-			throw new Error(`Theme "${theme}" missing required properties: layouts, components`);
-		}
-
-		return themeObj;
-	} catch (error) {
-		if (theme !== "@mnestia/theme-base") {
-			console.warn(`Failed to load theme "${theme}", falling back to base`);
-			return loadTheme("@mnestia/theme-base");
-		}
-		throw error;
+	if (!themeObj.layouts || !themeObj.components) {
+		console.warn(`Theme "${themeName}" missing required properties, using default`);
+		return getTheme(defaultTheme);
 	}
+
+	return themeObj;
 }
 
 export function DeckProvider({ config, children }: DeckProviderProps) {
-	const [store] = useState(() => createDeckAtom(config as DeckConfig));
-	const [theme, setTheme] = useState<ThemeModule | null>(null);
-	const [error, setError] = useState<Error | null>(null);
-
-	useEffect(() => {
-		loadTheme(config.theme)
-			.then(setTheme)
-			.catch((err: unknown) => {
-				console.error("Failed to load theme:", err);
-				setError(err instanceof Error ? err : new Error(String(err)));
-			});
-	}, [config.theme]);
-
-	if (error) {
-		return (
-			<div className="flex h-screen items-center justify-center p-8">
-				<div className="text-center">
-					<h1 className="mb-4 text-2xl font-bold text-red-500">Failed to load theme</h1>
-					<p className="text-gray-600">{error.message}</p>
-				</div>
-			</div>
-		);
-	}
-
-	if (!theme) {
-		return (
-			<div className="flex h-screen items-center justify-center">
-				<div className="text-lg text-gray-600">Loading theme...</div>
-			</div>
-		);
-	}
+	const store = useMemo(() => createDeckAtom(config as DeckConfig), [config]);
+	const theme = useMemo(() => loadTheme(config.theme), [config.theme]);
 
 	const value: DeckContextValue = {
 		store,

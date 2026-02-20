@@ -1,4 +1,4 @@
-import type { Plugin, ViteDevServer } from "vite";
+import type { Plugin } from "vite";
 import { resolve } from "pathe";
 import mdx from "@mdx-js/rollup";
 import type { DeckConfig } from "@mnestia/schema/deck";

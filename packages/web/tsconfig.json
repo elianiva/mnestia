@@ -9,7 +9,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "virtual:mnestia/deck": ["./src/virtual.d.ts"],
-      "virtual:mnestia/slides": ["./src/virtual.d.ts"]
+      "virtual:mnestia/slides": ["./src/virtual.d.ts"],
+      "virtual:mnestia/themes": ["./src/virtual.d.ts"]
     }
   },
   "include": ["src/**/*"],

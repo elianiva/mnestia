@@ -1,20 +1,28 @@
 import type { Plugin, UserConfig } from "vite";
 import { resolve } from "pathe";
-import { fileURLToPath } from "node:url";
+import { readFile } from "node:fs/promises";
 
 export interface ConfigPluginOptions {
 	root: string;
 	webRoot: string;
 }
 
+/**
+ * Convert path to /@fs/ URL for Vite
+ */
+function toAtFsPath(filepath: string): string {
+	return `/@fs${filepath.startsWith("/") ? "" : "/"}${filepath}`;
+}
+
 export function createConfigPlugin(options: ConfigPluginOptions): Plugin[] {
 	const webSrcRoot = resolve(options.webRoot, "src");
+	const mainEntryPath = resolve(options.webRoot, "src", "main.tsx");
 
 	return [
 		{
 			name: "mnestia:config",
 			enforce: "pre",
-			config(config): UserConfig {
+			config(_config): UserConfig {
 				return {
 					resolve: {
 						alias: {
@@ -45,11 +53,18 @@ export function createConfigPlugin(options: ConfigPluginOptions): Plugin[] {
 						if (req.url === "/" || req.url === "/index.html") {
 							const indexPath = resolve(options.root, "index.html");
 							try {
-								const content = await Bun.file(indexPath).text();
+								let content = await readFile(indexPath, "utf-8");
+								// Replace @mnestia/web entry path with /@fs/ absolute path
+								// This allows Vite to serve files outside the project root
+								content = content.replace(
+									/@mnestia\/web\/src\/main\.tsx/,
+									toAtFsPath(mainEntryPath),
+								);
 								res.setHeader("Content-Type", "text/html");
 								res.end(content);
 								return;
 							} catch {
+								// Continue to next middleware if file not found
 							}
 						}
 						next();

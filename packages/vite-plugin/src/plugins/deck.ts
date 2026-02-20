@@ -1,5 +1,4 @@
-import type { Plugin, ViteDevServer } from "vite";
-import { resolve } from "pathe";
+import type { Plugin } from "vite";
 import type { DeckConfig } from "@mnestia/schema/deck";
 
 export const VIRTUAL_DECK_ID = "virtual:mnestia/deck";

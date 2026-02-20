@@ -1,5 +1,10 @@
 export { DeckService } from "./services/deck-service.js";
-export { ThemeService } from "./services/theme-service.js";
+export {
+	ThemeService,
+	createThemeServiceLayer,
+	type ThemeServiceConfig,
+	type ThemeResolver,
+} from "./services/theme-service.js";
 export { NavigationService } from "./services/navigation-service.js";
 
 export { createDeckAtom } from "./atoms/deck-atom.js";

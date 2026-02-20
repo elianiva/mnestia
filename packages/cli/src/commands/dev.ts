@@ -113,8 +113,6 @@ export const devCommand = Command.make(
 				deckConfig, // Pass pre-loaded config
 			});
 
-			const webSrcPath = path.join(roots.webRoot, "src");
-
 			yield* Effect.tryPromise({
 				try: async () => {
 					const server = await vite.createServer({
@@ -124,12 +122,6 @@ export const devCommand = Command.make(
 							port,
 							host,
 							open,
-						},
-						resolve: {
-							alias: {
-								"@mnestia/web": roots.webRoot,
-								"@": webSrcPath,
-							},
 						},
 						optimizeDeps: {
 							entries: [path.join(roots.webRoot, "src", "main.tsx")],

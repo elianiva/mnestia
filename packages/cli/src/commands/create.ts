@@ -27,14 +27,27 @@ function copyFileEntry(
   srcPath: string,
   destPath: string,
 ): Effect.Effect<void, FileSystemError, never> {
-  return Effect.tryPromise({
-    try: () => Bun.write(destPath, Bun.file(srcPath)),
-    catch: () =>
-      new FileSystemError({
-        path: destPath,
-        message: `Failed to copy file from ${srcPath}`,
-        operation: "copyFile",
-      }),
+  return Effect.gen(function* () {
+    const content = yield* fs.readFile(srcPath).pipe(
+      Effect.mapError(
+        () =>
+          new FileSystemError({
+            path: srcPath,
+            message: `Failed to read file ${srcPath}`,
+            operation: "readFile",
+          }),
+      ),
+    );
+    yield* fs.writeFile(destPath, content).pipe(
+      Effect.mapError(
+        () =>
+          new FileSystemError({
+            path: destPath,
+            message: `Failed to write file ${destPath}`,
+            operation: "writeFile",
+          }),
+      ),
+    );
   });
 }
 
