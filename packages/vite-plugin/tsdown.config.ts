@@ -7,5 +7,5 @@ export default defineConfig({
   dts: true,
   clean: true,
   shims: false,
-  external: [/@mnestia/, 'vite'],
+  external: [/@mnestia/, 'vite', '@tailwindcss/vite'],
 })

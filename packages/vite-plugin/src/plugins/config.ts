@@ -1,6 +1,7 @@
 import type { Plugin, UserConfig } from "vite";
 import { resolve } from "pathe";
 import { readFile } from "node:fs/promises";
+import tailwindcss from "@tailwindcss/vite";
 
 export interface ConfigPluginOptions {
 	root: string;
@@ -19,6 +20,7 @@ export function createConfigPlugin(options: ConfigPluginOptions): Plugin[] {
 	const mainEntryPath = resolve(options.webRoot, "src", "main.tsx");
 
 	return [
+		tailwindcss(),
 		{
 			name: "mnestia:config",
 			enforce: "pre",

@@ -142,6 +142,7 @@
         "pathe": "^2.0.3",
       },
       "devDependencies": {
+        "@tailwindcss/vite": "^4.1.18",
         "@types/bun": "latest",
         "@types/react": "^19.2.0",
         "@types/react-dom": "^19.2.0",
