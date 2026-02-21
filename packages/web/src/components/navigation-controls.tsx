@@ -3,14 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useDeck } from "@/hooks/use-deck";
 
-export function NavigationControls() {
-	const { currentSlide, totalSlides, nextSlide, prevSlide, goToSlide, canGoNext, canGoPrev } =
-		useDeck();
+interface NavigationControlsProps {
+	onNext: () => void;
+	onPrev: () => void;
+	onGoToSlide: (index: number) => void;
+}
+
+export function NavigationControls({ onNext, onPrev, onGoToSlide }: NavigationControlsProps) {
+	const { currentSlide, totalSlides, canGoNext, canGoPrev } = useDeck();
 
 	const handleSliderChange = (value: number[]) => {
 		const slideIndex = value[0];
 		if (typeof slideIndex === "number") {
-			goToSlide(slideIndex);
+			onGoToSlide(slideIndex);
 		}
 	};
 
@@ -19,7 +24,7 @@ export function NavigationControls() {
 			<Button
 				variant="outline"
 				size="icon"
-				onClick={prevSlide}
+				onClick={onPrev}
 				disabled={!canGoPrev}
 				aria-label="Previous slide"
 			>
@@ -42,7 +47,7 @@ export function NavigationControls() {
 			<Button
 				variant="outline"
 				size="icon"
-				onClick={nextSlide}
+				onClick={onNext}
 				disabled={!canGoNext}
 				aria-label="Next slide"
 			>

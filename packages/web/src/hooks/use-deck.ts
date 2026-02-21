@@ -18,7 +18,7 @@ export interface UseDeckReturn {
 export function useDeck(): UseDeckReturn {
 	const { store } = useDeckContext();
 
-	const state = useAtomValue(store);
+	const state = useAtomValue(store) as DeckAtomValue;
 	const setState = useAtomSet(store);
 
 	const currentSlide = state.currentSlide;
@@ -30,19 +30,19 @@ export function useDeck(): UseDeckReturn {
 
 	const nextSlide = () => {
 		if (canGoNext) {
-			setState((prev) => ({ ...prev, currentSlide: prev.currentSlide + 1 }));
+			setState((prev: DeckAtomValue) => ({ ...prev, currentSlide: prev.currentSlide + 1 }));
 		}
 	};
 
 	const prevSlide = () => {
 		if (canGoPrev) {
-			setState((prev) => ({ ...prev, currentSlide: prev.currentSlide - 1 }));
+			setState((prev: DeckAtomValue) => ({ ...prev, currentSlide: prev.currentSlide - 1 }));
 		}
 	};
 
 	const goToSlide = (index: number) => {
 		if (index >= 0 && index < totalSlides) {
-			setState((prev) => ({ ...prev, currentSlide: index }));
+			setState((prev: DeckAtomValue) => ({ ...prev, currentSlide: index }));
 		}
 	};
 

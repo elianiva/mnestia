@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from "react";
+import { Suspense, useCallback, useEffect } from "react";
 import {
 	createRouter,
 	createRootRoute,
@@ -7,7 +7,6 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { deckConfig } from "virtual:mnestia/deck";
-import { slides } from "virtual:mnestia/slides";
 import { DeckProvider } from "./components/deck-provider";
 import { SlideViewer } from "./components/slide-viewer";
 import { NavigationControls } from "./components/navigation-controls";
@@ -61,38 +60,45 @@ function IndexComponent() {
 function SlideComponent() {
 	const { number } = slideRoute.useParams();
 	const { config } = useDeckContext();
-	const {
-		currentSlide,
-		totalSlides,
-		goToSlide,
-		nextSlide,
-		prevSlide,
-		goToFirstSlide,
-		goToLastSlide,
-		canGoNext,
-		canGoPrev,
-	} = useDeck();
+	const { currentSlide, totalSlides, goToSlide, canGoNext, canGoPrev } = useDeck();
 	const navigate = useNavigate();
 
+	// Sync URL -> state (browser navigation, initial load)
+	// Intentionally NOT depending on currentSlide/goToSlide to prevent infinite loop
+	// URL is the source of truth - this effect only runs when URL changes
 	useEffect(() => {
-		const slideIndex = parseInt(number, 10) - 1;
-		if (isNaN(slideIndex) || slideIndex < 0 || slideIndex >= totalSlides) {
+		const urlNumber = parseInt(number, 10);
+		if (isNaN(urlNumber) || urlNumber < 1 || urlNumber > totalSlides) {
 			navigate({ to: "/slide/$number", params: { number: "1" } });
 			return;
 		}
+		const slideIndex = urlNumber - 1;
 		if (slideIndex !== currentSlide) {
 			goToSlide(slideIndex);
 		}
-	}, [number, totalSlides, navigate, currentSlide, goToSlide]);
+		localStorage.setItem("mnestia:currentSlide", String(slideIndex));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [number, totalSlides, navigate]);
 
-	useEffect(() => {
-		const currentNumber = currentSlide + 1;
-		const urlNumber = parseInt(number, 10);
-		if (currentNumber !== urlNumber && !isNaN(urlNumber)) {
-			navigate({ to: "/slide/$number", params: { number: String(currentNumber) } });
-		}
-		localStorage.setItem("mnestia:currentSlide", String(currentSlide));
-	}, [currentSlide, number, navigate]);
+	// Navigation callbacks update URL, which then updates state via useEffect above
+	const goToSlideUrl = useCallback(
+		(index: number) => {
+			const newNumber = Math.max(1, Math.min(totalSlides, index + 1));
+			navigate({ to: "/slide/$number", params: { number: String(newNumber) } });
+		},
+		[navigate, totalSlides],
+	);
+
+	const nextSlide = useCallback(() => {
+		if (canGoNext) goToSlideUrl(currentSlide + 1);
+	}, [canGoNext, currentSlide, goToSlideUrl]);
+
+	const prevSlide = useCallback(() => {
+		if (canGoPrev) goToSlideUrl(currentSlide - 1);
+	}, [canGoPrev, currentSlide, goToSlideUrl]);
+
+	const goToFirstSlide = useCallback(() => goToSlideUrl(0), [goToSlideUrl]);
+	const goToLastSlide = useCallback(() => goToSlideUrl(totalSlides - 1), [goToSlideUrl, totalSlides]);
 
 	useNavigation({
 		config: config.navigation,
@@ -107,7 +113,11 @@ function SlideComponent() {
 	return (
 		<>
 			<SlideViewer />
-			<NavigationControls />
+			<NavigationControls
+				onNext={nextSlide}
+				onPrev={prevSlide}
+				onGoToSlide={goToSlideUrl}
+			/>
 		</>
 	);
 }
