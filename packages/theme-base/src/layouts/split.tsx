@@ -7,39 +7,29 @@ export interface SplitLayoutProps extends LayoutProps {
   ratio?: "50-50" | "60-40" | "40-60" | "70-30" | "30-70";
 }
 
-const ratioMap = {
-  "50-50": "1fr 1fr",
-  "60-40": "3fr 2fr",
-  "40-60": "2fr 3fr",
-  "70-30": "7fr 3fr",
-  "30-70": "3fr 7fr",
+const ratioClasses = {
+  "50-50": "grid-cols-2",
+  "60-40": "grid-cols-[3fr_2fr]",
+  "40-60": "grid-cols-[2fr_3fr]",
+  "70-30": "grid-cols-[7fr_3fr]",
+  "30-70": "grid-cols-[3fr_7fr]",
 };
 
 export function SplitLayout({ left, right, ratio = "50-50", className, style }: SplitLayoutProps) {
   return (
     <div
       data-layout="split"
-      className={className}
-      style={{
-        width: "100%",
-        height: "100%",
-        padding: "var(--mnestia-slide-padding)",
-        ...style,
-      }}
+      className={[
+        "h-full w-full bg-background p-8 text-foreground",
+        className
+      ].filter(Boolean).join(" ")}
+      style={style}
     >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: ratioMap[ratio],
-          gap: "var(--mnestia-space-8)",
-          height: "100%",
-          alignItems: "center",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div className={["grid h-full items-center gap-8", ratioClasses[ratio]].join(" ")}>
+        <div className="flex flex-col justify-center">
           {left}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div className="flex flex-col justify-center">
           {right}
         </div>
       </div>

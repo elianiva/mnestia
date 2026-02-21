@@ -9,25 +9,16 @@ export function CenterLayout({ children, className, style }: CenterLayoutProps) 
   return (
     <div
       data-layout="center"
-      className={className}
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "var(--mnestia-slide-padding)",
-        ...style,
-      }}
+      className={[
+        "flex h-full w-full items-center justify-center",
+        "bg-background p-8 text-foreground",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={style}
     >
-      <div
-        style={{
-          textAlign: "center",
-          maxWidth: "var(--mnestia-slide-max-width)",
-        }}
-      >
-        {children}
-      </div>
+      <div className="flex flex-col items-center text-center">{children}</div>
     </div>
   );
 }

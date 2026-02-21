@@ -5,48 +5,30 @@ export interface CoverLayoutProps {
   subtitle?: string;
   children?: ReactNode;
   className?: string;
-  style?: Record<string, unknown>;
+  style?: React.CSSProperties;
 }
 
 export function CoverLayout({ title, subtitle, children, className, style }: CoverLayoutProps) {
   return (
     <div
       data-layout="cover"
-      className={className}
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        textAlign: "center",
-        padding: "var(--mnestia-slide-padding)",
-        ...style,
-      }}
+      className={[
+        "flex h-full w-full flex-col items-center justify-center",
+        "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900",
+        "p-8 text-center",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={style}
     >
       {title && (
-        <h1
-          style={{
-            fontSize: "var(--mnestia-font-size-6xl)",
-            fontWeight: 700,
-            marginBottom: "var(--mnestia-space-4)",
-            color: "var(--mnestia-text)",
-          }}
-        >
+        <h1 className="mb-4 text-5xl font-bold tracking-tight text-white md:text-6xl">
           {title}
         </h1>
       )}
       {subtitle && (
-        <p
-          style={{
-            fontSize: "var(--mnestia-font-size-2xl)",
-            color: "var(--mnestia-text-secondary)",
-            marginBottom: "var(--mnestia-space-8)",
-          }}
-        >
-          {subtitle}
-        </p>
+        <p className="mb-8 text-xl text-slate-300 md:text-2xl">{subtitle}</p>
       )}
       {children}
     </div>

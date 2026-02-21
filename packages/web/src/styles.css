@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@mnestia/theme-base/styles/variables.css";
+@import "@mnestia/theme-base/styles/global.css";
 
 @custom-variant dark (&:is(.dark *));
 

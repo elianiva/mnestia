@@ -7,10 +7,10 @@ export interface GridLayoutProps extends LayoutProps {
   gap?: "sm" | "md" | "lg";
 }
 
-const gapMap = {
-  sm: "var(--mnestia-space-4)",
-  md: "var(--mnestia-space-6)",
-  lg: "var(--mnestia-space-8)",
+const gapClasses = {
+  sm: "gap-4",
+  md: "gap-6",
+  lg: "gap-8",
 };
 
 export function GridLayout({
@@ -20,27 +20,28 @@ export function GridLayout({
   className,
   style,
 }: GridLayoutProps) {
-  const gridTemplateColumns =
-    typeof columns === "number" ? `repeat(${columns}, 1fr)` : columns.join(" ");
+  const gridCols =
+    typeof columns === "number"
+      ? `grid-cols-${columns}`
+      : undefined;
+
+  const gridStyle =
+    typeof columns !== "number"
+      ? { gridTemplateColumns: columns.join(" ") }
+      : undefined;
 
   return (
     <div
       data-layout="grid"
-      className={className}
-      style={{
-        width: "100%",
-        height: "100%",
-        padding: "var(--mnestia-slide-padding)",
-        ...style,
-      }}
+      className={[
+        "h-full w-full bg-background p-8 text-foreground",
+        className
+      ].filter(Boolean).join(" ")}
+      style={style}
     >
       <div
-        style={{
-          display: "grid",
-          gridTemplateColumns,
-          gap: gapMap[gap],
-          height: "100%",
-        }}
+        className={["grid h-full", gridCols, gapClasses[gap]].filter(Boolean).join(" ")}
+        style={gridStyle}
       >
         {children}
       </div>

@@ -1,113 +1,199 @@
 /*
  * Mnestia Base Theme - Global Styles
- * Base styles and layout utilities
+ * Plain CSS that works alongside Tailwind - no @import or @layer directives
+ * Import tailwindcss BEFORE this file in your main entry
  */
 
-* {
+/* Reset */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* Full viewport setup */
+html,
+body,
+#root,
+#app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Base typography */
 html {
-  font-family: var(--mnestia-font-sans);
-  font-size: 16px;
-  line-height: var(--mnestia-line-height-normal);
-  color: var(--mnestia-text);
-  background-color: var(--mnestia-bg);
+  font-family: var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "rlig" 1, "calt" 1;
 }
 
 body {
-  min-height: 100vh;
-  overflow: hidden;
+  background-color: var(--background, white);
+  color: var(--foreground, #0f172a);
 }
 
 /* Slide container */
 .mnestia-slide {
-  width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
+  width: 100%;
 }
 
-/* Typography */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+/* Slide content typography */
+.mnestia-slide h1 {
+  font-size: 2.25rem;
   font-weight: 600;
-  line-height: var(--mnestia-line-height-tight);
-  color: var(--mnestia-text);
+  line-height: 1.25;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.025em;
 }
 
-h1 {
-  font-size: var(--mnestia-font-size-5xl);
-  margin-bottom: var(--mnestia-space-6);
+.mnestia-slide h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: 1rem;
+  letter-spacing: -0.025em;
 }
 
-h2 {
-  font-size: var(--mnestia-font-size-4xl);
-  margin-bottom: var(--mnestia-space-5);
+.mnestia-slide h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.025em;
 }
 
-h3 {
-  font-size: var(--mnestia-font-size-3xl);
-  margin-bottom: var(--mnestia-space-4);
+.mnestia-slide h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.025em;
 }
 
-h4 {
-  font-size: var(--mnestia-font-size-2xl);
-  margin-bottom: var(--mnestia-space-3);
+.mnestia-slide p {
+  margin-bottom: 1rem;
+  line-height: 1.625;
 }
 
-p {
-  margin-bottom: var(--mnestia-space-4);
-  color: var(--mnestia-text-secondary);
-}
-
-a {
-  color: var(--mnestia-primary);
+.mnestia-slide a {
+  color: var(--primary, #3b82f6);
   text-decoration: none;
+  transition: color 150ms ease;
 }
 
-a:hover {
-  color: var(--mnestia-primary-hover);
+.mnestia-slide a:hover {
+  color: var(--primary-hover, #2563eb);
   text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
-/* Lists */
-ul,
-ol {
-  margin-bottom: var(--mnestia-space-4);
-  padding-left: var(--mnestia-space-6);
+.mnestia-slide ul,
+.mnestia-slide ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
 }
 
-li {
-  margin-bottom: var(--mnestia-space-2);
+.mnestia-slide ul {
+  list-style-type: disc;
+}
+
+.mnestia-slide ol {
+  list-style-type: decimal;
+}
+
+.mnestia-slide li {
+  margin-bottom: 0.5rem;
+}
+
+.mnestia-slide li > ul,
+.mnestia-slide li > ol {
+  margin-bottom: 0;
+  margin-top: 0.5rem;
 }
 
 /* Code inline */
-code {
-  font-family: var(--mnestia-font-mono);
-  font-size: 0.875em;
-  background-color: var(--mnestia-bg-tertiary);
+.mnestia-slide code {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace);
+  font-size: 0.875rem;
+  background-color: var(--muted, #f1f5f9);
   padding: 0.125rem 0.375rem;
-  border-radius: calc(var(--mnestia-border-radius) / 2);
-  color: var(--mnestia-accent);
+  border-radius: 0.25rem;
 }
 
-/* Focus styles for accessibility */
-:focus-visible {
-  outline: 2px solid var(--mnestia-primary);
-  outline-offset: 2px;
+/* Block code */
+.mnestia-slide pre {
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background-color: var(--muted, #f1f5f9);
+  padding: 1rem;
+}
+
+.mnestia-slide pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Blockquote */
+.mnestia-slide blockquote {
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--primary, #3b82f6);
+  padding-left: 1rem;
+  font-style: italic;
+  color: var(--muted-foreground, #64748b);
+}
+
+/* Tables */
+.mnestia-slide table {
+  margin-bottom: 1rem;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.mnestia-slide th,
+.mnestia-slide td {
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.mnestia-slide th {
+  font-weight: 600;
+}
+
+/* Images */
+.mnestia-slide img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+}
+
+/* Horizontal rule */
+.mnestia-slide hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid var(--border, #e2e8f0);
 }
 
 /* Selection */
 ::selection {
-  background-color: var(--mnestia-primary);
-  color: var(--mnestia-primary-text);
+  background-color: var(--primary, #3b82f6);
+  color: var(--primary-foreground, white);
+}
+
+/* Slide scaling utilities */
+.mnestia-slide-scale {
+  --mnestia-slide-scale: 1;
+}
+
+.mnestia-slide-content {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(var(--mnestia-slide-scale, 1));
 }

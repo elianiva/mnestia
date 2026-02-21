@@ -9,18 +9,15 @@ export function DefaultLayout({ children, className, style }: DefaultLayoutProps
   return (
     <div
       data-layout="default"
-      className={className}
-      style={{
-        width: "100%",
-        height: "100%",
-        padding: "var(--mnestia-slide-padding)",
-        maxWidth: "var(--mnestia-slide-max-width)",
-        margin: "0 auto",
-        overflow: "auto",
-        ...style,
-      }}
+      className={[
+        "flex h-full w-full flex-col bg-background p-8 text-foreground",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={style}
     >
-      {children}
+      <div className="flex h-full w-full flex-col">{children}</div>
     </div>
   );
 }
