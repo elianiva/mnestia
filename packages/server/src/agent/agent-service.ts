@@ -11,29 +11,38 @@ import { captureEffectError } from "../config/sentry-capture";
 const JSON_BLOCK_RE = /```json\s*\n([\s\S]*?)```/g;
 
 /**
+ * Parse a single JSON block into a SlideCommand if valid.
+ */
+const parseOneBlock = (raw: string) =>
+  Effect.try({ try: () => JSON.parse(raw), catch: () => "malformed JSON" }).pipe(
+    Effect.flatMap((parsed) => {
+      const result = v.safeParse(SlideCommandSchema, parsed);
+      return result.success
+        ? Effect.succeed(result.output)
+        : Effect.fail("invalid command" as const);
+    }),
+    Effect.option
+  );
+
+/**
  * Extract SlideCommand objects from AI text response.
  * Looks for ```json fenced blocks, validates each against SlideCommandSchema.
  */
-export function parseSlideCommands(text: string): SlideCommand[] {
-  const commands: SlideCommand[] = [];
-
-  for (const match of text.matchAll(JSON_BLOCK_RE)) {
-    const raw = match[1]?.trim();
-    if (!raw) continue;
-
-    try {
-      const parsed = JSON.parse(raw);
-      const result = v.safeParse(SlideCommandSchema, parsed);
-      if (result.success) {
-        commands.push(result.output);
-      }
-    } catch {
-      // Skip malformed JSON blocks
-    }
-  }
-
-  return commands;
-}
+export const parseSlideCommands = (text: string): SlideCommand[] =>
+  Effect.runSync(
+    Effect.gen(function* () {
+      const results = yield* Effect.forEach(
+        [...text.matchAll(JSON_BLOCK_RE)]
+          .map((m) => m[1]?.trim())
+          .filter((s): s is string => !!s),
+        (raw) => parseOneBlock(raw),
+        { concurrency: "unbounded" }
+      );
+      return results.flatMap((opt) =>
+        opt._tag === "Some" ? [opt.value] : []
+      );
+    })
+  );
 
 // ── Command Execution ─────────────────────────────────────────────
 
