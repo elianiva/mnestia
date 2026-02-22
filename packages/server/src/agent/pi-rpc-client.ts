@@ -1,5 +1,14 @@
-import { spawn, type ChildProcess } from "node:child_process";
-import { createInterface, type Interface } from "node:readline";
+import {
+  Effect,
+  Deferred,
+  HashMap,
+  PubSub,
+  Queue,
+  Ref,
+  Scope,
+  Stream,
+} from "effect";
+import { Command } from "@effect/platform";
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -37,137 +46,161 @@ export interface PiAgentEnd {
   }>;
 }
 
-export type PiEventCallback = (event: PiRpcEvent) => void;
-
 export interface PiRpcClientOptions {
   provider?: string;
   model?: string;
 }
 
-// ── Client ────────────────────────────────────────────────────────
+// ── Errors ────────────────────────────────────────────────────────
 
-export class PiRpcClient {
-  private proc: ChildProcess | null = null;
-  private rl: Interface | null = null;
-  private listeners: PiEventCallback[] = [];
-  private responseResolvers = new Map<
-    string,
-    (resp: PiRpcResponse) => void
-  >();
-  private idCounter = 0;
-  private readonly options: PiRpcClientOptions;
-
-  constructor(options: PiRpcClientOptions = {}) {
-    this.options = options;
-  }
-
-  private ensureProcess(): ChildProcess {
-    if (this.proc && this.proc.exitCode === null) return this.proc;
-
-    const args = ["--mode", "rpc", "--no-session"];
-    if (this.options.provider) {
-      args.push("--provider", this.options.provider);
-    }
-    if (this.options.model) {
-      args.push("--model", this.options.model);
-    }
-
-    this.proc = spawn("pi", args, {
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-
-    this.rl = createInterface({ input: this.proc.stdout! });
-    this.rl.on("line", (line) => this.handleLine(line));
-
-    this.proc.on("exit", () => {
-      this.rl?.close();
-      this.rl = null;
-      this.proc = null;
-
-      // Reject all pending resolvers to prevent promise leaks
-      for (const [id, resolve] of this.responseResolvers) {
-        resolve({
-          type: "response",
-          id,
-          command: "unknown",
-          success: false,
-          error: "Pi RPC process exited unexpectedly",
-        });
-      }
-      this.responseResolvers.clear();
-    });
-
-    this.proc.stderr?.on("data", (chunk: Buffer) => {
-      // eslint-disable-next-line no-console
-      console.error("[pi-rpc]", chunk.toString());
-    });
-
-    return this.proc;
-  }
-
-  private handleLine(line: string): void {
-    let parsed: PiRpcEvent | PiRpcResponse;
-    try {
-      parsed = JSON.parse(line);
-    } catch {
-      return;
-    }
-
-    // Route responses to waiting resolvers
-    if (parsed.type === "response") {
-      const resp = parsed as PiRpcResponse;
-      const id = resp.id;
-      if (id && this.responseResolvers.has(id)) {
-        this.responseResolvers.get(id)!(resp);
-        this.responseResolvers.delete(id);
-        return;
-      }
-    }
-
-    // Broadcast events to listeners
-    for (const cb of this.listeners) {
-      cb(parsed as PiRpcEvent);
-    }
-  }
-
-  onEvent(callback: PiEventCallback): () => void {
-    this.listeners.push(callback);
-    return () => {
-      this.listeners = this.listeners.filter((cb) => cb !== callback);
-    };
-  }
-
-  async send(command: PiRpcCommand): Promise<PiRpcResponse> {
-    const proc = this.ensureProcess();
-    const id = `req-${++this.idCounter}`;
-    const cmd = { ...command, id };
-
-    return new Promise<PiRpcResponse>((resolve) => {
-      this.responseResolvers.set(id, resolve);
-      proc.stdin!.write(JSON.stringify(cmd) + "\n");
-    });
-  }
-
-  async prompt(message: string): Promise<PiRpcResponse> {
-    return this.send({ type: "prompt", message });
-  }
-
-  async abort(): Promise<PiRpcResponse> {
-    return this.send({ type: "abort" });
-  }
-
-  destroy(): void {
-    if (this.proc) {
-      this.proc.kill();
-      this.proc = null;
-    }
-    this.rl?.close();
-    this.rl = null;
-    this.listeners = [];
-    this.responseResolvers.clear();
-  }
-
-  get isAlive(): boolean {
-    return this.proc !== null && this.proc.exitCode === null;
-  }
+export class PiRpcProcessExitError {
+  readonly _tag = "PiRpcProcessExitError" as const;
+  constructor(readonly message: string = "Pi RPC process exited unexpectedly") {}
 }
+
+export class PiRpcSendError {
+  readonly _tag = "PiRpcSendError" as const;
+  constructor(readonly message: string) {}
+}
+
+// ── Client Interface ──────────────────────────────────────────────
+
+export interface PiRpcClient {
+  readonly events: PubSub.PubSub<PiRpcEvent>;
+  readonly send: (
+    command: PiRpcCommand
+  ) => Effect.Effect<PiRpcResponse, PiRpcProcessExitError | PiRpcSendError>;
+  readonly prompt: (
+    message: string
+  ) => Effect.Effect<PiRpcResponse, PiRpcProcessExitError | PiRpcSendError>;
+  readonly abort: () => Effect.Effect<
+    PiRpcResponse,
+    PiRpcProcessExitError | PiRpcSendError
+  >;
+  readonly onEvent: (
+    callback: (event: PiRpcEvent) => void
+  ) => Effect.Effect<void, never, Scope.Scope>;
+}
+
+// ── Factory ───────────────────────────────────────────────────────
+
+export const makePiRpcClient = Effect.fn("PiRpcClient.make")(function* (
+  options: PiRpcClientOptions = {}
+) {
+  const args = ["--mode", "rpc", "--no-session"];
+  if (options.provider) args.push("--provider", options.provider);
+  if (options.model) args.push("--model", options.model);
+
+  const cmd = Command.make("pi", ...args).pipe(
+    Command.stdin("pipe"),
+    Command.stdout("pipe"),
+    Command.stderr("pipe")
+  );
+
+  const proc = yield* Command.start(cmd);
+
+  const idCounter = yield* Ref.make(0);
+  const resolvers = yield* Ref.make(
+    HashMap.empty<string, Deferred.Deferred<PiRpcResponse, PiRpcProcessExitError>>()
+  );
+  const events = yield* PubSub.unbounded<PiRpcEvent>();
+
+  // Drain stderr to Effect.log
+  yield* proc.stderr.pipe(
+    Stream.decodeText("utf-8"),
+    Stream.splitLines,
+    Stream.runForEach((line) => Effect.log("[pi-rpc]", { stderr: line })),
+    Effect.forkScoped
+  );
+
+  // Parse stdout lines, route responses vs events
+  yield* proc.stdout.pipe(
+    Stream.decodeText("utf-8"),
+    Stream.splitLines,
+    Stream.runForEach((line) =>
+      Effect.gen(function* () {
+        const parsed = yield* Effect.try({
+          try: () => JSON.parse(line) as PiRpcEvent | PiRpcResponse,
+          catch: () => "malformed JSON" as const,
+        }).pipe(Effect.option);
+
+        if (parsed._tag === "None") return;
+        const msg = parsed.value;
+
+        if (msg.type === "response") {
+          const resp = msg as PiRpcResponse;
+          const id = resp.id;
+          if (id) {
+            const map = yield* Ref.get(resolvers);
+            const maybeDeferred = HashMap.get(map, id);
+            if (maybeDeferred._tag === "Some") {
+              yield* Deferred.succeed(maybeDeferred.value, resp);
+              yield* Ref.update(resolvers, HashMap.remove(id));
+              return;
+            }
+          }
+        }
+
+        yield* PubSub.publish(events, msg as PiRpcEvent);
+      })
+    ),
+    Effect.forkScoped
+  );
+
+  // On process exit, reject all pending deferreds
+  yield* proc.exitCode.pipe(
+    Effect.tap(() =>
+      Effect.gen(function* () {
+        const map = yield* Ref.get(resolvers);
+        yield* Effect.forEach(
+          HashMap.values(map),
+          (deferred) =>
+            Deferred.succeed(deferred, {
+              type: "response",
+              command: "unknown",
+              success: false,
+              error: "Pi RPC process exited unexpectedly",
+            }),
+          { discard: true }
+        );
+        yield* Ref.set(resolvers, HashMap.empty());
+      })
+    ),
+    Effect.forkScoped
+  );
+
+  const send = Effect.fn("PiRpcClient.send")(function* (
+    command: PiRpcCommand
+  ) {
+    const id = `req-${yield* Ref.getAndUpdate(idCounter, (n) => n + 1)}`;
+    const cmd = { ...command, id };
+    const deferred = yield* Deferred.make<PiRpcResponse, PiRpcProcessExitError>();
+
+    yield* Ref.update(resolvers, HashMap.set(id, deferred));
+
+    const payload = new TextEncoder().encode(JSON.stringify(cmd) + "\n");
+    yield* Stream.make(payload).pipe(
+      Stream.run(proc.stdin),
+      Effect.mapError(() => new PiRpcSendError("Failed to write to pi stdin"))
+    );
+
+    return yield* Deferred.await(deferred);
+  });
+
+  const prompt = (message: string) =>
+    send({ type: "prompt", message });
+
+  const abort = () => send({ type: "abort" });
+
+  const onEvent = (callback: (event: PiRpcEvent) => void) =>
+    Effect.gen(function* () {
+      const sub = yield* PubSub.subscribe(events);
+      yield* Queue.take(sub).pipe(
+        Effect.tap((event) => Effect.sync(() => callback(event))),
+        Effect.forever,
+        Effect.forkScoped
+      );
+    });
+
+  return { events, send, prompt, abort, onEvent } satisfies PiRpcClient;
+});

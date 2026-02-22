@@ -1,9 +1,11 @@
 import { Elysia } from "elysia";
-import { ManagedRuntime, Option } from "effect";
+import { Effect, ManagedRuntime, Option, PubSub, Queue } from "effect";
 import * as v from "valibot";
 import * as Sentry from "@sentry/bun";
+import { BunContext } from "@effect/platform-bun";
 import { SLIDE_TOOL_DESCRIPTIONS } from "@mnestia/schema";
-import type { ServerDeckState, AgentChatBodySchema } from "@mnestia/schema";
+import type { ServerDeckState } from "@mnestia/schema";
+import { AgentChatBodySchema } from "@mnestia/schema";
 import type { SlideService } from "../domain/slide-service";
 import type { DeckStateInternal } from "../domain/slide-store";
 import type { AppConfig } from "../config/app-config";
@@ -14,7 +16,7 @@ import {
   type BroadcastFn,
 } from "./agent-service";
 import {
-  PiRpcClient,
+  makePiRpcClient,
   type PiRpcEvent,
   type PiRpcClientOptions,
 } from "./pi-rpc-client";
@@ -47,15 +49,11 @@ function buildBroadcast(
   };
 }
 
-function createPiClient(config: AppConfig): PiRpcClient {
-  const options: PiRpcClientOptions = {};
-  if (Option.isSome(config.piProvider)) {
-    options.provider = config.piProvider.value;
-  }
-  if (Option.isSome(config.piModel)) {
-    options.model = config.piModel.value;
-  }
-  return new PiRpcClient(options);
+function buildClientOptions(config: AppConfig): PiRpcClientOptions {
+  return {
+    provider: Option.getOrUndefined(config.piProvider),
+    model: Option.getOrUndefined(config.piModel),
+  };
 }
 
 // ── SSE helpers ───────────────────────────────────────────────────
@@ -64,12 +62,9 @@ function sseEncode(event: string, data: string): string {
   return `event: ${event}\ndata: ${data}\n\n`;
 }
 
-export const agentController = new Elysia({ name: "agent-controller" })
-  .derive((ctx) => {
-    const { appConfig } = ctx as unknown as { appConfig: AppConfig };
-    return { piClient: createPiClient(appConfig) };
-  })
-  .post("/agent/chat", async (ctx) => {
+export const agentController = new Elysia({ name: "agent-controller" }).post(
+  "/agent/chat",
+  async (ctx) => {
     return Sentry.startSpan(
       {
         name: "agent.chat",
@@ -97,9 +92,10 @@ export const agentController = new Elysia({ name: "agent-controller" })
             slideStore: Map<string, DeckStateInternal>;
             slideRuntime: ManagedRuntime.ManagedRuntime<SlideService, never>;
           };
+        const { appConfig } = ctx as unknown as { appConfig: AppConfig };
 
         const broadcast = buildBroadcast(storeMap, runtime);
-        const client = ctx.piClient;
+        const clientOptions = buildClientOptions(appConfig);
 
         // Build the full prompt with system context
         const contextLine = deckId
@@ -114,7 +110,6 @@ export const agentController = new Elysia({ name: "agent-controller" })
         // Stream response as SSE
         const stream = new ReadableStream({
           async start(controller) {
-            let fullText = "";
             let closed = false;
 
             function tryClose() {
@@ -136,64 +131,108 @@ export const agentController = new Elysia({ name: "agent-controller" })
               }
             }
 
-            const unsubscribe = client.onEvent((event: PiRpcEvent) => {
-              if (event.type === "message_update") {
-                const delta = event.assistantMessageEvent as
-                  | { type: string; delta?: string }
-                  | undefined;
+            // Run the entire agent interaction as a scoped Effect
+            const program = Effect.gen(function* () {
+              const client = yield* makePiRpcClient(clientOptions);
+              let fullText = "";
 
-                if (delta?.type === "text_delta" && delta.delta) {
-                  fullText += delta.delta;
+              // Subscribe to events
+              const sub = yield* PubSub.subscribe(client.events);
+
+              // Send prompt
+              const resp = yield* client.prompt(fullPrompt).pipe(
+                Effect.catchAll((err) =>
+                  Effect.succeed({
+                    type: "response" as const,
+                    command: "prompt",
+                    success: false,
+                    error: err.message,
+                  })
+                )
+              );
+
+              if (!resp.success) {
+                tryEnqueue(
+                  sseEncode(
+                    "error",
+                    JSON.stringify({ error: resp.error })
+                  )
+                );
+                tryClose();
+                return;
+              }
+
+              // Process events from the subscription
+              yield* Effect.gen(function* () {
+                while (true) {
+                  const event = yield* Queue.take(sub);
+
+                  if (event.type === "message_update") {
+                    const delta = event.assistantMessageEvent as
+                      | { type: string; delta?: string }
+                      | undefined;
+
+                    if (delta?.type === "text_delta" && delta.delta) {
+                      fullText += delta.delta;
+                      tryEnqueue(
+                        sseEncode(
+                          "text",
+                          JSON.stringify({ content: delta.delta })
+                        )
+                      );
+                    }
+                  }
+
+                  if (event.type === "agent_end") {
+                    break;
+                  }
+                }
+              });
+
+              // Extract and execute commands
+              const commands = parseSlideCommands(fullText);
+
+              if (commands.length > 0) {
+                const result = yield* Effect.tryPromise({
+                  try: () =>
+                    executeSlideCommands(commands, runtime, broadcast),
+                  catch: () => "command execution failed" as const,
+                }).pipe(Effect.option);
+
+                if (result._tag === "Some") {
                   tryEnqueue(
-                    sseEncode(
-                      "text",
-                      JSON.stringify({ content: delta.delta })
-                    )
+                    sseEncode("commands", JSON.stringify(result.value))
                   );
                 }
               }
 
-              if (event.type === "agent_end") {
-                unsubscribe();
-
-                // Extract commands from full response, execute them
-                const commands = parseSlideCommands(fullText);
-
-                if (commands.length > 0) {
-                  executeSlideCommands(commands, runtime, broadcast)
-                    .then((result) => {
-                      tryEnqueue(
-                        sseEncode(
-                          "commands",
-                          JSON.stringify(result)
-                        )
-                      );
-                      tryEnqueue(sseEncode("done", "{}"));
-                      tryClose();
-                    })
-                    .catch(() => {
-                      tryEnqueue(sseEncode("done", "{}"));
-                      tryClose();
-                    });
-                } else {
-                  tryEnqueue(sseEncode("done", "{}"));
-                  tryClose();
-                }
-              }
-            });
-
-            // Send prompt to Pi
-            const resp = await client.prompt(fullPrompt);
-            if (!resp.success) {
-              unsubscribe();
-              tryEnqueue(
-                sseEncode(
-                  "error",
-                  JSON.stringify({ error: resp.error })
-                )
-              );
+              tryEnqueue(sseEncode("done", "{}"));
               tryClose();
-            }
+            }).pipe(
+              Effect.scoped,
+              Effect.catchAll((err) =>
+                Effect.sync(() => {
+                  tryEnqueue(
+                    sseEncode(
+                      "error",
+                      JSON.stringify({
+                        error:
+                          typeof err === "object" &&
+                          err !== null &&
+                          "message" in err
+                            ? (err as { message: string }).message
+                            : String(err),
+                      })
+                    )
+                  );
+                  tryClose();
+                })
+              ),
+              Effect.withSpan("agent.chat.stream"),
+              Effect.provide(BunContext.layer)
+            );
+
+            await Effect.runPromise(program);
           },
         });
 
@@ -206,4 +245,5 @@ export const agentController = new Elysia({ name: "agent-controller" })
         });
       }
     );
-  });
+  }
+);

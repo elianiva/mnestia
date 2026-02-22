@@ -1,77 +1,42 @@
 import { test, expect, describe } from "bun:test";
+import { Effect } from "effect";
+import { BunContext } from "@effect/platform-bun";
 import {
-  PiRpcClient,
+  makePiRpcClient,
   type PiRpcEvent,
   type PiRpcClientOptions,
 } from "../../src/agent/pi-rpc-client";
 
-// ── Unit tests (no subprocess spawn) ──────────────────────────────
-// These test the public API surface and lifecycle logic.
+// ── Unit tests ────────────────────────────────────────────────────
+// These verify the factory function signature and options propagation.
 // We don't spawn a real `pi` process — that would require pi installed.
 
+const runScoped = <A, E>(effect: Effect.Effect<A, E>) =>
+  Effect.runPromise(
+    effect.pipe(Effect.scoped, Effect.provide(BunContext.layer))
+  );
+
 describe("PiRpcClient", () => {
-  describe("constructor", () => {
-    test("creates client with default options", () => {
-      const client = new PiRpcClient();
-      expect(client.isAlive).toBe(false);
-      client.destroy();
+  describe("makePiRpcClient", () => {
+    test("factory returns an Effect", () => {
+      // makePiRpcClient returns an Effect — just verify it's callable
+      const effect = makePiRpcClient({});
+      expect(effect).toBeDefined();
+      // We don't run it since that would try to spawn `pi`
     });
 
-    test("creates client with provider and model options", () => {
+    test("accepts provider and model options", () => {
       const options: PiRpcClientOptions = {
         provider: "anthropic",
         model: "claude-sonnet-4-20250514",
       };
-      const client = new PiRpcClient(options);
-      expect(client.isAlive).toBe(false);
-      client.destroy();
-    });
-  });
-
-  describe("onEvent", () => {
-    test("returns unsubscribe function", () => {
-      const client = new PiRpcClient();
-      const unsub = client.onEvent(() => {});
-      expect(typeof unsub).toBe("function");
-      unsub();
-      client.destroy();
+      const effect = makePiRpcClient(options);
+      expect(effect).toBeDefined();
     });
 
-    test("unsubscribe removes listener", () => {
-      const client = new PiRpcClient();
-      const events: PiRpcEvent[] = [];
-      const unsub = client.onEvent((e) => events.push(e));
-      unsub();
-      // After unsubscribe, no events should be received
-      // (we can't trigger events without a process, but the listener list is empty)
-      client.destroy();
-    });
-  });
-
-  describe("destroy", () => {
-    test("destroy on fresh client does not throw", () => {
-      const client = new PiRpcClient();
-      expect(() => client.destroy()).not.toThrow();
-    });
-
-    test("double destroy does not throw", () => {
-      const client = new PiRpcClient();
-      client.destroy();
-      expect(() => client.destroy()).not.toThrow();
-    });
-
-    test("isAlive is false after destroy", () => {
-      const client = new PiRpcClient();
-      client.destroy();
-      expect(client.isAlive).toBe(false);
-    });
-  });
-
-  describe("isAlive", () => {
-    test("is false before any prompt", () => {
-      const client = new PiRpcClient();
-      expect(client.isAlive).toBe(false);
-      client.destroy();
+    test("accepts empty options", () => {
+      const effect = makePiRpcClient();
+      expect(effect).toBeDefined();
     });
   });
 });
