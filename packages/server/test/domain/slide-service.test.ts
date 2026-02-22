@@ -578,7 +578,7 @@ describe("SlideService.changeCurrentSlide", () => {
     expectFailureWithTag(exit, "InvalidSlideIndexError");
   });
 
-  test("allows any index when deck has no slides", async () => {
+  test("allows index 0 when deck has no slides", async () => {
     const { layer, storeMap } = createTestLayer();
     seedDeck(storeMap, "deck-1", 0);
 
@@ -588,6 +588,18 @@ describe("SlideService.changeCurrentSlide", () => {
     );
 
     expectSuccess(exit);
+  });
+
+  test("fails with InvalidSlideIndexError for non-zero index on empty deck", async () => {
+    const { layer, storeMap } = createTestLayer();
+    seedDeck(storeMap, "deck-1", 0);
+
+    const exit = await runWithService(
+      (svc) => svc.changeCurrentSlide("deck-1", 5),
+      layer
+    );
+
+    expectFailureWithTag(exit, "InvalidSlideIndexError");
   });
 
   test("fails with DeckNotFoundError for unknown deck", async () => {

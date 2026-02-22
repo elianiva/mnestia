@@ -1,12 +1,13 @@
 import { Cause, Effect, Either, ManagedRuntime, Layer } from "effect";
 import type { WsOutgoingMessage } from "@mnestia/schema";
+import type { Resource } from "@effect/opentelemetry/Resource";
 import { createSlideStoreLive } from "../domain/slide-layer";
 import { SlideService } from "../domain/slide-service";
 import type { DeckStateInternal } from "../domain/slide-store";
 
 export function createSlideRuntime(
   storeMap: Map<string, DeckStateInternal>,
-  tracingLayer: Layer.Layer<never>
+  tracingLayer: Layer.Layer<Resource>
 ): ManagedRuntime.ManagedRuntime<SlideService, never> {
   const storeLayer = createSlideStoreLive(storeMap);
   const serviceLayer = SlideService.Default.pipe(Layer.provide(storeLayer));

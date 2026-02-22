@@ -1,6 +1,7 @@
 import { expect } from "bun:test";
 import { Effect, Exit, Cause, Option, Layer, Context } from "effect";
 import { Elysia, type AnyElysia } from "elysia";
+import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
 import type { DeckStateInternal } from "../src/domain/slide-store";
 import type { AppConfig } from "../src/config/app-config";
 import type { SentryConfig } from "../src/config/sentry-config";
@@ -53,7 +54,7 @@ export function createTestConfig(
 
 export function createDecoratedApp(configOverrides: Partial<AppConfig> = {}) {
   const storeMap = new Map<string, DeckStateInternal>();
-  const runtime = createSlideRuntime(storeMap, Layer.empty);
+  const runtime = createSlideRuntime(storeMap, NodeSdk.layerEmpty);
   const appConfig = createTestConfig(configOverrides);
   const app = new Elysia()
     .decorate("appConfig", appConfig)

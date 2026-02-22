@@ -22,5 +22,11 @@ export class SlideStore extends Context.Tag("@mnestia/SlideStore")<
     readonly getAll: () => Effect.Effect<
       ReadonlyArray<[string, DeckStateInternal]>
     >;
+    readonly addClient: (
+      deckId: string,
+      clientId: string,
+      ws: WebSocket
+    ) => Effect.Effect<void>;
+    readonly removeClient: (clientId: string) => Effect.Effect<void>;
   }
 >() {}

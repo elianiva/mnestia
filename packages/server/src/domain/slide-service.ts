@@ -215,8 +215,9 @@ export class SlideService extends Effect.Service<SlideService>()(
           const deck = yield* getDeckOrFail(deckId);
 
           if (
-            deck.slides.length > 0 &&
-            (slideIndex < 0 || slideIndex >= deck.slides.length)
+            deck.slides.length === 0
+              ? slideIndex !== 0
+              : slideIndex < 0 || slideIndex >= deck.slides.length
           ) {
             return yield* new InvalidSlideIndexError({
               deckId,
@@ -229,6 +230,18 @@ export class SlideService extends Effect.Service<SlideService>()(
           const updated: DeckStateInternal = { ...deck, currentSlide: slideIndex };
           yield* store.set(deckId, updated);
           return toServerDeckState(updated);
+        }
+      );
+
+      const addClient = Effect.fn("SlideService.addClient")(
+        function* (deckId: string, clientId: string, ws: WebSocket) {
+          yield* store.addClient(deckId, clientId, ws);
+        }
+      );
+
+      const removeClient = Effect.fn("SlideService.removeClient")(
+        function* (clientId: string) {
+          yield* store.removeClient(clientId);
         }
       );
 
@@ -274,6 +287,8 @@ export class SlideService extends Effect.Service<SlideService>()(
         updateSlide,
         reorderSlides,
         changeCurrentSlide,
+        addClient,
+        removeClient,
         executeCommand,
       };
     }),

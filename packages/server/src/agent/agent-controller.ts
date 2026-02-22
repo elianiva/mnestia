@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
-import { Effect, ManagedRuntime, Option } from "effect";
+import { ManagedRuntime, Option } from "effect";
+import * as v from "valibot";
 import * as Sentry from "@sentry/bun";
 import { SLIDE_TOOL_DESCRIPTIONS } from "@mnestia/schema";
 import type { ServerDeckState } from "@mnestia/schema";
@@ -28,20 +29,15 @@ Guidelines:
 - When updating slides, only include the fields you want to change
 - Be helpful and proactive — suggest improvements when appropriate`;
 
-interface ControllerContext {
-  slideStore: Map<string, DeckStateInternal>;
-  slideRuntime: ManagedRuntime.ManagedRuntime<SlideService, never>;
-  appConfig: AppConfig;
-}
-
 function buildBroadcast(
-  storeMap: Map<string, DeckStateInternal>
+  storeMap: Map<string, DeckStateInternal>,
+  runtime: ManagedRuntime.ManagedRuntime<SlideService, never>
 ): BroadcastFn {
   return (deckId: string, state: ServerDeckState) => {
     const internal = storeMap.get(deckId);
     if (!internal) return;
 
-    Effect.runSync(
+    void runtime.runPromise(
       broadcastToClients(internal.clients, {
         type: "SLIDE_UPDATED" as const,
         deckId,
@@ -51,13 +47,7 @@ function buildBroadcast(
   };
 }
 
-// ── Singleton Pi RPC client (lazy init) ───────────────────────────
-
-let piClient: PiRpcClient | null = null;
-
-function getOrCreateClient(config: AppConfig): PiRpcClient {
-  if (piClient?.isAlive) return piClient;
-
+function createPiClient(config: AppConfig): PiRpcClient {
   const options: PiRpcClientOptions = {};
   if (Option.isSome(config.piProvider)) {
     options.provider = config.piProvider.value;
@@ -65,10 +55,20 @@ function getOrCreateClient(config: AppConfig): PiRpcClient {
   if (Option.isSome(config.piModel)) {
     options.model = config.piModel.value;
   }
-
-  piClient = new PiRpcClient(options);
-  return piClient;
+  return new PiRpcClient(options);
 }
+
+// ── Request validation ────────────────────────────────────────────
+
+const AgentChatBodySchema = v.object({
+  messages: v.array(
+    v.object({
+      role: v.string(),
+      content: v.string(),
+    })
+  ),
+  deckId: v.string(),
+});
 
 // ── SSE helpers ───────────────────────────────────────────────────
 
@@ -77,6 +77,10 @@ function sseEncode(event: string, data: string): string {
 }
 
 export const agentController = new Elysia({ name: "agent-controller" })
+  .derive((ctx) => {
+    const { appConfig } = ctx as unknown as { appConfig: AppConfig };
+    return { piClient: createPiClient(appConfig) };
+  })
   .post("/agent/chat", async (ctx) => {
     return Sentry.startSpan(
       {
@@ -84,19 +88,30 @@ export const agentController = new Elysia({ name: "agent-controller" })
         op: "ai.chat",
       },
       async (span) => {
-        const { messages, deckId } = ctx.body as {
-          messages: Array<{ role: string; content: string }>;
-          deckId: string;
-        };
+        const parsed = v.safeParse(AgentChatBodySchema, ctx.body);
+        if (!parsed.success) {
+          return new Response(
+            JSON.stringify({
+              error: "Invalid request body",
+              issues: parsed.issues.map((i) => i.message),
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        const { messages, deckId } = parsed.output;
 
         span.setAttribute("deck.id", deckId ?? "unknown");
         span.setAttribute("message.count", messages.length);
 
-        const { slideStore: storeMap, slideRuntime: runtime, appConfig } =
-          ctx as unknown as ControllerContext;
+        const { slideStore: storeMap, slideRuntime: runtime } =
+          ctx as unknown as {
+            slideStore: Map<string, DeckStateInternal>;
+            slideRuntime: ManagedRuntime.ManagedRuntime<SlideService, never>;
+          };
 
-        const broadcast = buildBroadcast(storeMap);
-        const client = getOrCreateClient(appConfig);
+        const broadcast = buildBroadcast(storeMap, runtime);
+        const client = ctx.piClient;
 
         // Build the full prompt with system context
         const contextLine = deckId
@@ -112,6 +127,26 @@ export const agentController = new Elysia({ name: "agent-controller" })
         const stream = new ReadableStream({
           async start(controller) {
             let fullText = "";
+            let closed = false;
+
+            function tryClose() {
+              if (closed) return;
+              closed = true;
+              try {
+                controller.close();
+              } catch {
+                // Already closed
+              }
+            }
+
+            function tryEnqueue(chunk: string) {
+              if (closed) return;
+              try {
+                controller.enqueue(chunk);
+              } catch {
+                // Stream already closed
+              }
+            }
 
             const unsubscribe = client.onEvent((event: PiRpcEvent) => {
               if (event.type === "message_update") {
@@ -121,7 +156,7 @@ export const agentController = new Elysia({ name: "agent-controller" })
 
                 if (delta?.type === "text_delta" && delta.delta) {
                   fullText += delta.delta;
-                  controller.enqueue(
+                  tryEnqueue(
                     sseEncode(
                       "text",
                       JSON.stringify({ content: delta.delta })
@@ -131,45 +166,45 @@ export const agentController = new Elysia({ name: "agent-controller" })
               }
 
               if (event.type === "agent_end") {
+                unsubscribe();
+
                 // Extract commands from full response, execute them
                 const commands = parseSlideCommands(fullText);
 
                 if (commands.length > 0) {
                   executeSlideCommands(commands, runtime, broadcast)
                     .then((result) => {
-                      controller.enqueue(
+                      tryEnqueue(
                         sseEncode(
                           "commands",
                           JSON.stringify(result)
                         )
                       );
-                      controller.enqueue(sseEncode("done", "{}"));
-                      controller.close();
+                      tryEnqueue(sseEncode("done", "{}"));
+                      tryClose();
                     })
                     .catch(() => {
-                      controller.enqueue(sseEncode("done", "{}"));
-                      controller.close();
+                      tryEnqueue(sseEncode("done", "{}"));
+                      tryClose();
                     });
                 } else {
-                  controller.enqueue(sseEncode("done", "{}"));
-                  controller.close();
+                  tryEnqueue(sseEncode("done", "{}"));
+                  tryClose();
                 }
-
-                unsubscribe();
               }
             });
 
             // Send prompt to Pi
             const resp = await client.prompt(fullPrompt);
             if (!resp.success) {
-              controller.enqueue(
+              unsubscribe();
+              tryEnqueue(
                 sseEncode(
                   "error",
                   JSON.stringify({ error: resp.error })
                 )
               );
-              controller.close();
-              unsubscribe();
+              tryClose();
             }
           },
         });

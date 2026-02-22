@@ -68,10 +68,11 @@ function handleMessage(
       case "JOIN_ROOM": {
         const state = yield* service.getOrCreateDeck(message.deckId);
 
-        const internal = storeMap.get(message.deckId);
-        if (internal) {
-          internal.clients.set(ws.id, ws as unknown as WebSocket);
-        }
+        yield* service.addClient(
+          message.deckId,
+          ws.id,
+          ws as unknown as WebSocket
+        );
 
         sendMessage(ws, {
           type: "SYNC_STATE",
@@ -141,12 +142,17 @@ export const slideWs = new Elysia({ name: "slide-ws" })
       }
     },
 
-    close(ws) {
-      const { slideStore: storeMap } = ws.data as unknown as WsData;
+    async close(ws) {
+      const { slideRuntime: runtime } = ws.data as unknown as WsData;
 
       const wsId = (ws as unknown as WsSender).id;
-      for (const [, deck] of storeMap) {
-        deck.clients.delete(wsId);
-      }
+      const pipeline = Effect.gen(function* () {
+        const service = yield* SlideService;
+        yield* service.removeClient(wsId);
+      });
+
+      await runtime.runPromise(pipeline).catch(() => {
+        // Best-effort cleanup — don't crash on close
+      });
     },
   });

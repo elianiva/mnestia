@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { Layer } from "effect";
+import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
 import type { ServerDeckState } from "@mnestia/schema";
 import {
   parseSlideCommands,
@@ -19,7 +19,7 @@ interface BroadcastRecord {
 
 function createTestContext() {
   const storeMap = new Map<string, DeckStateInternal>();
-  const runtime = createSlideRuntime(storeMap, Layer.empty);
+  const runtime = createSlideRuntime(storeMap, NodeSdk.layerEmpty);
   const broadcasts: BroadcastRecord[] = [];
   const broadcast: BroadcastFn = (deckId, state) => {
     broadcasts.push({ deckId, state });

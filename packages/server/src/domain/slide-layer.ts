@@ -10,5 +10,18 @@ export function createSlideStoreLive(
     delete: (deckId) => Effect.sync(() => map.delete(deckId)),
     has: (deckId) => Effect.sync(() => map.has(deckId)),
     getAll: () => Effect.sync(() => [...map.entries()]),
+    addClient: (deckId, clientId, ws) =>
+      Effect.sync(() => {
+        const deck = map.get(deckId);
+        if (deck) {
+          deck.clients.set(clientId, ws);
+        }
+      }),
+    removeClient: (clientId) =>
+      Effect.sync(() => {
+        for (const [, deck] of map) {
+          deck.clients.delete(clientId);
+        }
+      }),
   });
 }

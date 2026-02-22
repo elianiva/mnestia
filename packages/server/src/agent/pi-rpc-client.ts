@@ -83,6 +83,18 @@ export class PiRpcClient {
       this.rl?.close();
       this.rl = null;
       this.proc = null;
+
+      // Reject all pending resolvers to prevent promise leaks
+      for (const [id, resolve] of this.responseResolvers) {
+        resolve({
+          type: "response",
+          id,
+          command: "unknown",
+          success: false,
+          error: "Pi RPC process exited unexpectedly",
+        });
+      }
+      this.responseResolvers.clear();
     });
 
     this.proc.stderr?.on("data", (chunk: Buffer) => {
