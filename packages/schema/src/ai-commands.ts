@@ -49,6 +49,16 @@ export const SlideCommandSchema = v.variant("type", [
   ChangeCurrentSlideCommandSchema,
 ]);
 
+export const AgentChatBodySchema = v.object({
+  messages: v.array(
+    v.object({
+      role: v.string(),
+      content: v.string(),
+    })
+  ),
+  deckId: v.string(),
+});
+
 export type SlideCommand = v.InferOutput<typeof SlideCommandSchema>;
 
 // ── Tool Descriptions (injected into AI system prompt) ────────────

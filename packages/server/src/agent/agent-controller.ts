@@ -3,7 +3,7 @@ import { ManagedRuntime, Option } from "effect";
 import * as v from "valibot";
 import * as Sentry from "@sentry/bun";
 import { SLIDE_TOOL_DESCRIPTIONS } from "@mnestia/schema";
-import type { ServerDeckState } from "@mnestia/schema";
+import type { ServerDeckState, AgentChatBodySchema } from "@mnestia/schema";
 import type { SlideService } from "../domain/slide-service";
 import type { DeckStateInternal } from "../domain/slide-store";
 import type { AppConfig } from "../config/app-config";
@@ -57,18 +57,6 @@ function createPiClient(config: AppConfig): PiRpcClient {
   }
   return new PiRpcClient(options);
 }
-
-// ── Request validation ────────────────────────────────────────────
-
-const AgentChatBodySchema = v.object({
-  messages: v.array(
-    v.object({
-      role: v.string(),
-      content: v.string(),
-    })
-  ),
-  deckId: v.string(),
-});
 
 // ── SSE helpers ───────────────────────────────────────────────────
 
