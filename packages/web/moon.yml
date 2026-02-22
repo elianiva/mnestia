@@ -9,6 +9,10 @@ dependsOn:
     scope: 'build'
   - id: 'schema'
     scope: 'build'
+  - id: 'theme-base'
+    scope: 'build'
+  - id: 'vite-plugin'
+    scope: 'build'
 
 tasks:
   # Build task is auto-detected from package.json "build": "vite build"
